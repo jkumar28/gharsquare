@@ -18,7 +18,7 @@ $flash = getFlash();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-    <link href="<?= APP_URL ?>/assets/css/admin.css" rel="stylesheet">
+    <link href="<?= APP_URL ?>/assets/css/admin.css?v=<?= filemtime(BASE_PATH . '/assets/css/admin.css') ?>" rel="stylesheet">
 </head>
 <body class="admin-body">
 <?php if ($flash): ?>
@@ -42,11 +42,6 @@ $flash = getFlash();
                 <a class="btn btn-primary admin-topbar-action" href="<?= ADMIN_URL ?>/properties/create.php">
                     <i class="bi bi-plus-circle me-1"></i>Add Property
                 </a>
-                <div class="admin-chip">
-                    <span class="admin-chip-label">Signed in as</span>
-                    <strong><?= e($currentAdmin['name'] ?? 'Admin') ?></strong>
-                </div>
-                <a class="btn btn-dark" href="<?= ADMIN_URL ?>/logout.php">Logout</a>
             </div>
         </header>
 <?php else: ?>

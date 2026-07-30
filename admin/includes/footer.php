@@ -13,7 +13,7 @@ declare(strict_types=1);
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
-<script src="<?= APP_URL ?>/assets/js/admin.js"></script>
+<script src="<?= APP_URL ?>/assets/js/admin.js?v=<?= filemtime(BASE_PATH . '/assets/js/admin.js') ?>"></script>
 <?php foreach (($pageScripts ?? []) as $script): ?>
     <script src="<?= e($script) ?>"></script>
 <?php endforeach; ?>

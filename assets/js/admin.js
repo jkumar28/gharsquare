@@ -16,6 +16,56 @@
     window.AdminUi = window.AdminUi || {};
     window.AdminUi.initTooltips = initTooltips;
 
+    function initAdminNavigation() {
+        const toggle = document.querySelector('[data-admin-nav-toggle]');
+        const panel = document.querySelector('[data-admin-nav-panel]');
+
+        if (!toggle || !panel) {
+            return;
+        }
+
+        function closeNavigation() {
+            panel.classList.remove('is-open');
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+
+        toggle.addEventListener('click', function () {
+            const willOpen = !panel.classList.contains('is-open');
+            panel.classList.toggle('is-open', willOpen);
+            toggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        });
+
+        panel.querySelectorAll('a').forEach(function (link) {
+            link.addEventListener('click', closeNavigation);
+        });
+
+        document.addEventListener('click', function (event) {
+            document.querySelectorAll('.admin-nav-group[open]').forEach(function (group) {
+                if (!group.contains(event.target)) {
+                    group.removeAttribute('open');
+                }
+            });
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key !== 'Escape') {
+                return;
+            }
+
+            closeNavigation();
+            document.querySelectorAll('.admin-nav-group[open]').forEach(function (group) {
+                group.removeAttribute('open');
+            });
+            toggle.focus();
+        });
+
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 991) {
+                closeNavigation();
+            }
+        });
+    }
+
     function normalizeFlashType(type) {
         const value = (type || '').toLowerCase();
 
@@ -289,6 +339,7 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         showFlashMessage();
+        initAdminNavigation();
         initDataTables();
         initForms();
         initTooltips(document);
