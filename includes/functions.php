@@ -451,6 +451,14 @@ function findCountry(int $id): ?array
     return $stmt->fetch() ?: null;
 }
 
+function findCountryByName(string $name): ?array
+{
+    $stmt = db()->prepare('SELECT id, name FROM countries WHERE LOWER(name) = LOWER(:name) LIMIT 1');
+    $stmt->execute([':name' => trim($name)]);
+
+    return $stmt->fetch() ?: null;
+}
+
 function countryExists(string $name, ?int $ignoreId = null): bool
 {
     $sql = 'SELECT COUNT(*) FROM countries WHERE name = :name';

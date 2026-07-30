@@ -48,6 +48,13 @@ usort(
     }
 );
 $countries = countryOptions();
+$indiaCountry = findCountryByName('India');
+
+if (!$indiaCountry) {
+    throw new RuntimeException('India must be configured in country master before users can post properties.');
+}
+
+$publicCountryId = (int) $indiaCountry['id'];
 $states = statesAll();
 $cities = citiesAll();
 $localities = localitiesAll();
@@ -349,13 +356,10 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
                         <div class="post-panel-title"><span>Step 2</span><h2>Location</h2></div>
                         <div class="post-form-grid">
                             <div class="post-field">
-                                <label for="country_id">Country</label>
-                                <select id="country_id" name="country_id" data-country-select required>
-                                    <option value="">Select country</option>
-                                    <?php foreach ($countries as $country): ?>
-                                        <option value="<?= e((string) $country['id']) ?>"<?= selectedAttr($location['country_id'] ?? '', $country['id']) ?>><?= e((string) $country['name']) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
+                                <label for="country_display">Country</label>
+                                <input id="country_display" type="text" value="<?= e((string) $indiaCountry['name']) ?>" readonly aria-readonly="true">
+                                <input id="country_id" name="country_id" type="hidden" value="<?= e((string) $publicCountryId) ?>" data-country-select>
+                                <small>Property listings are currently available in India only.</small>
                             </div>
                             <div class="post-field">
                                 <label for="state_id">State</label>
@@ -853,6 +857,7 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
     <script>
         window.postPropertyData = <?= json_encode([
             'countries' => array_map(static fn (array $row): array => ['id' => (int) $row['id'], 'name' => (string) $row['name']], $countries),
+            'public_country_id' => $publicCountryId,
             'states' => array_map(static fn (array $row): array => ['id' => (int) $row['id'], 'country_id' => (int) ($row['country_id'] ?? 0), 'name' => (string) $row['name']], $states),
             'cities' => array_map(static fn (array $row): array => ['id' => (int) $row['id'], 'state_id' => (int) ($row['state_id'] ?? 0), 'name' => (string) $row['name']], $cities),
             'localities' => array_map(static fn (array $row): array => ['id' => (int) $row['id'], 'city_id' => (int) ($row['city_id'] ?? 0), 'name' => (string) $row['name']], $localities),
@@ -872,7 +877,7 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
                 'api_key' => GOOGLE_MAPS_API_KEY,
             ],
             'selected' => [
-                'country_id' => (int) ($location['country_id'] ?? 0),
+                'country_id' => $publicCountryId,
                 'state_id' => (int) ($location['state_id'] ?? 0),
                 'city_id' => (int) ($location['city_id'] ?? 0),
                 'locality_id' => (int) ($location['locality_id'] ?? 0),

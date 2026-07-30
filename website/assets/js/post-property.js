@@ -10,6 +10,7 @@
     const states = config.states || JSON.parse(wizard.dataset.states || "[]");
     const cities = config.cities || JSON.parse(wizard.dataset.cities || "[]");
     const localities = config.localities || JSON.parse(wizard.dataset.localities || "[]");
+    const fixedCountryId = String(config.public_country_id || "");
     const saveStatus = document.querySelector("[data-save-status]");
     const progressBar = document.querySelector("[data-progress-bar]");
     const overallProgress = document.querySelector("[data-overall-progress]");
@@ -206,8 +207,8 @@
         const city = document.querySelector("[data-city-select]");
         const locality = document.querySelector("[data-locality-select]");
 
-        if (country && Object.prototype.hasOwnProperty.call(seed, "country_id")) {
-            country.value = seed.country_id ? String(seed.country_id) : "";
+        if (country) {
+            country.value = fixedCountryId || country.value || "";
         }
 
         const selectedState = Object.prototype.hasOwnProperty.call(seed, "state_id") ? seed.state_id : (state?.dataset.selected || state?.value || "");

@@ -358,9 +358,18 @@ try {
 
     if ($action === 'save_step') {
         $step = trim((string) ($_POST['step'] ?? ''));
+        $stepInput = $_POST;
+
+        if ($step === 'location') {
+            $indiaCountry = findCountryByName('India');
+            if (!$indiaCountry) {
+                throw new RuntimeException('India is not configured in country master.');
+            }
+            $stepInput['country_id'] = (int) $indiaCountry['id'];
+        }
 
         if (isset($_POST['validate_step'])) {
-            $errors = publicDraftStepValidationErrors($draftId, $step, $_POST);
+            $errors = publicDraftStepValidationErrors($draftId, $step, $stepInput);
 
             if ($errors) {
                 postPropertyResponse([
@@ -371,7 +380,7 @@ try {
             }
         }
 
-        savePublicDraftStep($draftId, $step, $_POST);
+        savePublicDraftStep($draftId, $step, $stepInput);
         recordUserActivity('property_draft_save', [
             'entity_type' => 'property_draft',
             'entity_id' => (string) $draftId,
