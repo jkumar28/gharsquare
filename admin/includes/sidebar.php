@@ -66,7 +66,7 @@ $mastersOpen = navGroupIsActive([
                     <i class="bi bi-chat-left-text" aria-hidden="true"></i><span>Enquiries</span>
                 </a>
 
-                <details class="admin-nav-group" <?= $mastersOpen ? 'open' : '' ?>>
+                <details class="admin-nav-group">
                     <summary class="admin-nav-group-toggle<?= $mastersOpen ? ' active' : '' ?>">
                         <i class="bi bi-sliders" aria-hidden="true"></i>
                         <span>Masters</span>
