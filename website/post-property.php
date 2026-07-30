@@ -67,6 +67,7 @@ $maintenanceOptions = maintenancePeriodOptions();
 $progress = $bundle['progress'];
 $basic = $bundle['basic'];
 $location = $bundle['location'];
+$selectedLocality = !empty($location['locality_id']) ? findLocality((int) $location['locality_id']) : null;
 $profile = $bundle['profile'];
 $pricing = $bundle['pricing'];
 $media = $bundle['media'];
@@ -374,8 +375,11 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
                                 <select id="city_id" name="city_id" data-city-select required data-selected="<?= e((string) ($location['city_id'] ?? '')) ?>"></select>
                             </div>
                             <div class="post-field">
-                                <label for="locality_id">Locality</label>
-                                <select id="locality_id" name="locality_id" data-locality-select required data-selected="<?= e((string) ($location['locality_id'] ?? '')) ?>"></select>
+                                <label for="locality_search">Locality</label>
+                                <input id="locality_search" type="text" list="locality_suggestions" value="<?= e((string) ($selectedLocality['name'] ?? '')) ?>" placeholder="Search or enter locality" autocomplete="off" required data-locality-search>
+                                <datalist id="locality_suggestions" data-locality-suggestions></datalist>
+                                <select id="locality_id" name="locality_id" data-locality-select data-selected="<?= e((string) ($location['locality_id'] ?? '')) ?>" hidden></select>
+                                <small>Select a suggestion, or type a new locality and it will be added automatically.</small>
                             </div>
                             <div class="post-field span-2">
                                 <label for="address_line">Address</label>

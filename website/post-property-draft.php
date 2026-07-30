@@ -389,11 +389,29 @@ try {
             'metadata' => ['step' => $step],
         ]);
 
-        postPropertyResponse([
+        $response = [
             'success' => true,
             'message' => ucfirst($step) . ' saved as draft.',
             'progress' => propertyProgressPayload($draftId),
-        ]);
+        ];
+
+        if ($step === 'location') {
+            $state = findState((int) ($stepInput['state_id'] ?? 0));
+            $city = findCity((int) ($stepInput['city_id'] ?? 0));
+            $locality = findLocality((int) ($stepInput['locality_id'] ?? 0));
+            $response['location'] = [
+                'country_id' => (int) ($stepInput['country_id'] ?? 0),
+                'state_id' => (int) ($state['id'] ?? 0),
+                'state_name' => (string) ($state['name'] ?? ''),
+                'city_id' => (int) ($city['id'] ?? 0),
+                'city_name' => (string) ($city['name'] ?? ''),
+                'locality_id' => (int) ($locality['id'] ?? 0),
+                'locality_name' => (string) ($locality['name'] ?? ''),
+                'pincode' => (string) ($locality['pincode'] ?? ($stepInput['pincode'] ?? '')),
+            ];
+        }
+
+        postPropertyResponse($response);
     }
 
     if ($action === 'submit') {

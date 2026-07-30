@@ -96,7 +96,16 @@ function resolveMapLocationHierarchy(array $input): array
     $localityName = mapLocationName($input, 'map_locality_name');
     $pincode = trim((string) ($input['pincode'] ?? ''));
 
-    if (!$countryId || $stateName === '' || $cityName === '' || $localityName === '') {
+    $stateIsValid = $state && (int) $state['country_id'] === $countryId;
+    $cityIsValid = $stateIsValid && $city && (int) $city['state_id'] === $stateId;
+    $localityIsValid = $cityIsValid && $locality && (int) $locality['city_id'] === $cityId;
+
+    if (
+        !$countryId
+        || (!$stateIsValid && $stateName === '')
+        || (!$cityIsValid && $cityName === '')
+        || (!$localityIsValid && $localityName === '')
+    ) {
         throw new RuntimeException('We could not match the selected map address. Please choose the address again or select the location manually.');
     }
     if ($pincode !== '' && !preg_match('/^[0-9]{4,10}$/', $pincode)) {
@@ -110,12 +119,18 @@ function resolveMapLocationHierarchy(array $input): array
     }
 
     try {
-        $stateId = findLocationMasterId('states', $stateName, 'country_id', $countryId)
-            ?: createMapLocationMaster('states', $stateName, 'country_id', $countryId);
-        $cityId = findLocationMasterId('cities', $cityName, 'state_id', $stateId)
-            ?: createMapLocationMaster('cities', $cityName, 'state_id', $stateId);
-        $localityId = findLocationMasterId('localities', $localityName, 'city_id', $cityId)
-            ?: createMapLocationMaster('localities', $localityName, 'city_id', $cityId, $pincode);
+        if (!$stateIsValid) {
+            $stateId = findLocationMasterId('states', $stateName, 'country_id', $countryId)
+                ?: createMapLocationMaster('states', $stateName, 'country_id', $countryId);
+        }
+        if (!$cityIsValid) {
+            $cityId = findLocationMasterId('cities', $cityName, 'state_id', $stateId)
+                ?: createMapLocationMaster('cities', $cityName, 'state_id', $stateId);
+        }
+        if (!$localityIsValid) {
+            $localityId = findLocationMasterId('localities', $localityName, 'city_id', $cityId)
+                ?: createMapLocationMaster('localities', $localityName, 'city_id', $cityId, $pincode);
+        }
 
         if ($startedTransaction) {
             $pdo->commit();

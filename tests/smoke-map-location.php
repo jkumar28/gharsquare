@@ -51,6 +51,26 @@ try {
         throw new RuntimeException('Map location hierarchy was not created correctly.');
     }
 
+    $manualResolved = resolveMapLocationHierarchy([
+        'country_id' => (int) $india['id'],
+        'state_id' => (int) $state['id'],
+        'city_id' => (int) $city['id'],
+        'locality_id' => 0,
+        'map_state_name' => '',
+        'map_city_name' => '',
+        'map_locality_name' => 'Manual Locality ' . $suffix,
+        'pincode' => '800002',
+    ]);
+    $manualLocality = findLocality((int) $manualResolved['locality_id']);
+
+    if (
+        !$manualLocality
+        || (int) $manualLocality['city_id'] !== (int) $city['id']
+        || (string) $manualLocality['name'] !== 'Manual Locality ' . $suffix
+    ) {
+        throw new RuntimeException('Manually entered locality was not created under the selected city.');
+    }
+
     echo 'Map location auto-creation smoke test passed.' . PHP_EOL;
 } finally {
     if ($pdo->inTransaction()) {

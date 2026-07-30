@@ -152,6 +152,9 @@
                 }
 
                 updateProgress(data.progress);
+                if (step === "location" && data.location) {
+                    syncResolvedLocation(data.location);
+                }
                 setStatus(submitFinal ? "Submitted" : "Draft saved", submitFinal ? "submitted" : "saved");
 
                 if (!submitFinal && step !== "media") {
@@ -206,6 +209,8 @@
         const state = document.querySelector("[data-state-select]");
         const city = document.querySelector("[data-city-select]");
         const locality = document.querySelector("[data-locality-select]");
+        const localitySearch = document.querySelector("[data-locality-search]");
+        const localitySuggestions = document.querySelector("[data-locality-suggestions]");
 
         if (country) {
             country.value = fixedCountryId || country.value || "";
@@ -226,10 +231,71 @@
         const cityId = city?.value || "";
         const filteredLocalities = localities.filter(item => String(item.city_id || "") === String(cityId));
         fillSelect(locality, filteredLocalities, "id", "name", selectedLocality, "Select locality");
+        if (localitySuggestions) {
+            localitySuggestions.innerHTML = filteredLocalities
+                .map(item => `<option value="${escapeHtml(item.name || "")}"></option>`)
+                .join("");
+        }
+        const selectedLocalityRow = filteredLocalities.find(item => String(item.id) === String(locality?.value || ""));
+        if (localitySearch && selectedLocalityRow) {
+            localitySearch.value = selectedLocalityRow.name || "";
+        } else if (localitySearch && Object.prototype.hasOwnProperty.call(seed, "locality_name")) {
+            localitySearch.value = seed.locality_name || "";
+        } else if (localitySearch && Object.keys(seed).length === 0) {
+            localitySearch.value = "";
+            setFieldValue("#map_locality_name", "");
+        }
 
         if (state) state.dataset.selected = "";
         if (city) city.dataset.selected = "";
         if (locality) locality.dataset.selected = "";
+    }
+
+    function upsertLocationRow(rows, row, parentKey) {
+        if (!row || !row.id) return;
+        const existing = rows.find(item => String(item.id) === String(row.id));
+        const next = { id: row.id, name: row.name || "" };
+        if (parentKey) next[parentKey] = row[parentKey];
+        if (existing) Object.assign(existing, next);
+        else rows.push(next);
+    }
+
+    function syncResolvedLocation(location) {
+        upsertLocationRow(states, {
+            id: location.state_id,
+            country_id: location.country_id,
+            name: location.state_name
+        }, "country_id");
+        upsertLocationRow(cities, {
+            id: location.city_id,
+            state_id: location.state_id,
+            name: location.city_name
+        }, "state_id");
+        upsertLocationRow(localities, {
+            id: location.locality_id,
+            city_id: location.city_id,
+            name: location.locality_name
+        }, "city_id");
+        syncLocationSelects(location);
+        setFieldValue("#locality_search", location.locality_name || "");
+        setFieldValue("#map_state_name", location.state_name || "");
+        setFieldValue("#map_city_name", location.city_name || "");
+        setFieldValue("#map_locality_name", location.locality_name || "");
+    }
+
+    function syncLocalityInput() {
+        const city = document.querySelector("[data-city-select]");
+        const locality = document.querySelector("[data-locality-select]");
+        const localitySearch = document.querySelector("[data-locality-search]");
+        if (!locality || !localitySearch) return;
+
+        const typedName = localitySearch.value.trim();
+        const match = findLocationOptionByName(
+            localities.filter(item => String(item.city_id || "") === String(city?.value || "")),
+            typedName
+        );
+        locality.value = match ? String(match.id) : "";
+        setFieldValue("#map_locality_name", typedName);
     }
 
     function selectedListingInput() {
@@ -1162,12 +1228,17 @@
             "#map_locality_name",
             localityComponent?.long_name || cityComponent?.long_name || ""
         );
+        setFieldValue(
+            "#locality_search",
+            localityComponent?.long_name || cityComponent?.long_name || ""
+        );
 
         syncLocationSelects({
             country_id: country ? country.id : 0,
             state_id: state ? state.id : 0,
             city_id: city ? city.id : 0,
-            locality_id: locality ? locality.id : 0
+            locality_id: locality ? locality.id : 0,
+            locality_name: localityComponent?.long_name || cityComponent?.long_name || ""
         });
 
         if (postalCodeComponent) {
@@ -1176,7 +1247,8 @@
 
         const locationForm = document.querySelector('[data-step-form="location"]');
         if (locationForm) {
-            scheduleSave(locationForm);
+            clearTimeout(saveTimer);
+            saveForm(locationForm, { alert: false }).catch(() => {});
         }
     }
 
@@ -1740,6 +1812,9 @@
 
         form.addEventListener("input", event => {
             if (event.target.matches("textarea, input, select") && event.target.type !== "file") {
+                if (event.target.matches("[data-locality-search]")) {
+                    syncLocalityInput();
+                }
                 syncSmartContext();
                 scheduleSave(form);
             }
@@ -1764,6 +1839,9 @@
                 }
                 if (event.target.matches("[data-country-select], [data-state-select], [data-city-select]")) {
                     syncLocationSelects();
+                }
+                if (event.target.matches("[data-locality-search]")) {
+                    syncLocalityInput();
                 }
                 syncSmartContext();
                 scheduleSave(form);
