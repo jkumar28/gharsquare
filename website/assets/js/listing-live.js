@@ -2,8 +2,13 @@
     const root = document.querySelector(".listing-main");
     const csrfToken = root?.dataset.csrfToken || "";
 
+    function endpoint(path) {
+        const base = document.querySelector('meta[name="app-url"]')?.content || "";
+        return `${base.replace(/\/$/, "")}/${String(path || "").replace(/^\//, "")}`;
+    }
+
     function postJson(path, payload) {
-        return fetch(path, {
+        return fetch(endpoint(path), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

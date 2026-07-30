@@ -7,6 +7,11 @@
     const gallery = [];
     let galleryIndex = 0;
 
+    function endpoint(path) {
+        const base = document.querySelector('meta[name="app-url"]')?.content || "";
+        return `${base.replace(/\/$/, "")}/${String(path || "").replace(/^\//, "")}`;
+    }
+
     document.querySelectorAll("[data-gallery-thumb]").forEach(function (thumb) {
         gallery.push(thumb.dataset.src || "");
         thumb.addEventListener("click", function () {
@@ -38,7 +43,7 @@
     });
 
     function postJson(path, payload) {
-        return fetch(path, {
+        return fetch(endpoint(path), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

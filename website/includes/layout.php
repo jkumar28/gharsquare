@@ -55,6 +55,7 @@ function websiteHeader(string $title, string $description, string $bodyClass = '
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="app-url" content="<?= e(APP_URL) ?>">
     <title><?= e($title) ?></title>
     <meta name="description" content="<?= e($description) ?>">
     <meta name="robots" content="<?= e((string) ($options['robots'] ?? 'index,follow,max-image-preview:large')) ?>">

@@ -9,7 +9,8 @@
     }
 
     function endpoint(path) {
-        return path;
+        const base = document.querySelector('meta[name="app-url"]')?.content || "";
+        return `${base.replace(/\/$/, "")}/${String(path || "").replace(/^\//, "")}`;
     }
 
     function trackActivity(payload) {
