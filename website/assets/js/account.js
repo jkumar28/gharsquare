@@ -1,6 +1,12 @@
 (function () {
+    function endpoint(path) {
+        const base = document.querySelector('meta[name="app-url"]')?.content || "";
+        return `${base.replace(/\/$/, "")}/${String(path || "").replace(/^\//, "")}`;
+    }
+
     function removeSavedProperty(button) {
         const propertyRef = button.getAttribute("data-remove-saved");
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
 
         if (!propertyRef) {
             return;
@@ -9,13 +15,17 @@
         button.disabled = true;
         button.textContent = "Removing";
 
-        fetch("saved-property", {
+        fetch(endpoint("saved-property"), {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": csrfToken
+            },
             credentials: "same-origin",
             body: JSON.stringify({
                 action: "unsave",
                 property_ref: propertyRef,
+                csrf_token: csrfToken,
                 source: "account_saved",
                 page_url: window.location.href,
                 page_title: document.title
@@ -41,9 +51,10 @@
                     window.location.reload();
                 }
             })
-            .catch(function () {
+            .catch(function (error) {
                 button.disabled = false;
                 button.textContent = "Remove";
+                window.alert(error.message || "Unable to remove saved property.");
             });
     }
 

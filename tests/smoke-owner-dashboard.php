@@ -29,4 +29,8 @@ if (!str_contains($html, $expected)) {
     throw new RuntimeException('Owner dashboard view did not render: ' . $expected);
 }
 
+if (!str_contains($html, 'name="csrf-token"') || !str_contains($html, 'name="app-url"')) {
+    throw new RuntimeException('The account dashboard is missing AJAX security configuration.');
+}
+
 echo 'Owner ' . $_GET['view'] . ' smoke test passed.' . PHP_EOL;
