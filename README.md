@@ -8,6 +8,7 @@ website, owner listing workflow, enquiry management, and an admin panel.
 - PHP 8.2 with PDO MySQL, fileinfo, and mbstring
 - MySQL 8 or MariaDB 10.4+
 - Apache with `mod_rewrite`
+- Apache `mod_headers`, `mod_expires`, and `mod_deflate` recommended
 - Composer
 
 ## Local setup
@@ -84,5 +85,26 @@ D:\xampp\php\php.exe tests\smoke-owner-dashboard.php leads
 D:\xampp\php\php.exe tests\smoke-admin-enquiries.php
 ```
 
-The public site is served from `/website`; `/admin` contains the administrative
-application.
+The public website is served from the application root. The `/website`
+directory contains implementation files and redirects direct page requests to
+canonical root URLs. The administrative application is available under
+`/admin`.
+
+## Production deployment
+
+1. Point the domain document root to this repository directory.
+2. Set `APP_ENV=live` and `APP_URL=https://your-domain.example`.
+3. Configure production database, SMTP, Maps, sender, and enquiry inbox
+   variables in the hosting environment.
+4. Install production dependencies with `composer install --no-dev
+   --optimize-autoloader`.
+5. Import the baseline database when required and apply migrations with
+   `php database/migrate.php`.
+6. Ensure `storage`, `storage/sessions`, `storage/mail`, and
+   `uploads/properties` are writable by PHP.
+7. Run `php tests/preflight-live.php --strict`. Deploy only when it reports
+   zero failures and zero environment warnings.
+8. Submit `/sitemap.xml` in Google Search Console after DNS and HTTPS are live.
+
+Real credentials must remain in hosting environment variables or ignored
+`config/private/*.php` files. Never commit them.
