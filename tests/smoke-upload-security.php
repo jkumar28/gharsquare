@@ -5,6 +5,12 @@ declare(strict_types=1);
 require dirname(__DIR__) . '/config/config.php';
 require BASE_PATH . '/includes/property.php';
 
+$legacyMediaUrl = 'http://localhost/gharsquare/uploads/properties/13/images/example.webp';
+$normalizedMediaUrl = propertyNormalizeMediaUrl($legacyMediaUrl);
+if ($normalizedMediaUrl !== APP_URL . '/uploads/properties/13/images/example.webp') {
+    throw new RuntimeException('Imported media URLs are not normalized to the active application URL.');
+}
+
 $temporaryFiles = [];
 
 try {

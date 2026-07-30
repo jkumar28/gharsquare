@@ -181,11 +181,7 @@ function sitePublicType(array $property): string
 
 function siteNormalizeMediaUrl(string $url): string
 {
-    $url = trim($url);
-    $path = $url !== '' ? parse_url($url, PHP_URL_PATH) : null;
-    $position = is_string($path) ? strpos($path, '/uploads/') : false;
-
-    return $position !== false ? APP_URL . substr($path, $position) : $url;
+    return propertyNormalizeMediaUrl($url);
 }
 
 function sitePropertyMedia(int $draftId, ?string $type = null): array

@@ -1085,6 +1085,20 @@ function propertyDraftMedia(int $draftId): array
     return array_map('hydratePropertyMediaItem', $rows);
 }
 
+function propertyNormalizeMediaUrl(string $url): string
+{
+    $url = trim($url);
+
+    if ($url === '') {
+        return '';
+    }
+
+    $path = parse_url($url, PHP_URL_PATH);
+    $position = is_string($path) ? strpos($path, '/uploads/') : false;
+
+    return $position !== false ? APP_URL . substr($path, $position) : $url;
+}
+
 function propertyDraftAmenityIds(int $draftId): array
 {
     $stmt = db()->prepare('SELECT amenity_id FROM property_amenities WHERE draft_id = :draft_id');
@@ -1095,7 +1109,7 @@ function propertyDraftAmenityIds(int $draftId): array
 
 function hydratePropertyMediaItem(array $row): array
 {
-    $fileUrl = (string) ($row['file_url'] ?? '');
+    $fileUrl = propertyNormalizeMediaUrl((string) ($row['file_url'] ?? ''));
     $type = (string) ($row['type'] ?? '');
     $youtubeId = extractYoutubeId($fileUrl);
     $kind = $youtubeId ? 'youtube' : $type;
