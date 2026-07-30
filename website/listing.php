@@ -4,17 +4,37 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/layout.php';
 
-if (!preg_match('~/properties/?$~', (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH))) {
-    header('Location: ' . siteListingUrl($_GET), true, 301);
-    exit;
-}
-
 $allowedTypes = ['buy', 'rent', 'commercial', 'pg', 'plots'];
 $type = strtolower(trim((string) ($_GET['type'] ?? '')));
 $type = in_array($type, $allowedTypes, true) ? $type : '';
+$filterData = siteSearchFilterData();
+$cities = $filterData['cities'];
+$city = trim((string) ($_GET['city'] ?? ''));
+$citySlug = trim((string) ($_GET['city_slug'] ?? ''));
+
+if ($city === '' && $citySlug !== '') {
+    $city = siteCityNameFromSlug($citySlug, $cities);
+
+    if ($city === '') {
+        http_response_code(404);
+    }
+}
+
+$canonicalFilters = ['type' => $type, 'city' => $city];
+$canonical = siteListingUrl($canonicalFilters);
+$requestPath = rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/');
+$canonicalPath = rtrim((string) parse_url($canonical, PHP_URL_PATH), '/');
+
+if ($requestPath !== $canonicalPath && empty($_GET['seo_route'])) {
+    $redirectQuery = $_GET;
+    unset($redirectQuery['type'], $redirectQuery['city'], $redirectQuery['city_slug'], $redirectQuery['seo_route']);
+    header('Location: ' . siteListingUrl(array_merge($canonicalFilters, $redirectQuery)), true, 301);
+    exit;
+}
+
 $filters = [
     'type' => $type,
-    'city' => trim((string) ($_GET['city'] ?? '')),
+    'city' => $city,
     'q' => trim((string) ($_GET['q'] ?? '')),
     'property_type_id' => (int) ($_GET['property_type_id'] ?? 0),
     'budget' => trim((string) ($_GET['budget'] ?? '')),
@@ -24,8 +44,6 @@ $filters = [
     'page' => max(1, (int) ($_GET['page'] ?? 1)),
 ];
 $results = siteSearchProperties($filters, 12);
-$filterData = siteSearchFilterData();
-$cities = $filterData['cities'];
 $selectedCity = $filters['city'] !== '' ? $filters['city'] : websiteSelectedCity($cities);
 $savedRefs = array_fill_keys(publicUserSavedPropertyRefs(), true);
 $typeLabels = [
@@ -41,9 +59,33 @@ if ($filters['city'] !== '') {
     $heading .= ' in ' . $filters['city'];
 }
 
+$descriptions = [
+    '' => 'Browse verified active properties on GharSquare with location, price, bedroom and area filters.',
+    'buy' => 'Discover verified properties for sale',
+    'rent' => 'Find verified rental homes',
+    'commercial' => 'Explore verified commercial properties',
+    'pg' => 'Find verified PG and co-living accommodation',
+    'plots' => 'Discover verified land and plots for sale',
+];
+$metaDescription = $descriptions[$type];
+if ($type !== '') {
+    $metaDescription .= $city !== '' ? ' in ' . $city : ' across active GharSquare locations';
+    $metaDescription .= '. Compare current listings, prices, locations and property details.';
+}
+$nonIndexableKeys = ['q', 'property_type_id', 'budget', 'bhk', 'min_area', 'sort', 'page'];
+$hasDeepFilters = false;
+foreach ($nonIndexableKeys as $key) {
+    $value = $_GET[$key] ?? null;
+    if ($value !== null && $value !== '' && $value !== '0' && !($key === 'sort' && $value === 'latest') && !($key === 'page' && (int) $value === 1)) {
+        $hasDeepFilters = true;
+        break;
+    }
+}
+
 function listingQueryUrl(array $changes = []): string
 {
     $query = array_merge($_GET, $changes);
+    unset($query['city_slug'], $query['seo_route']);
     foreach ($query as $key => $value) {
         if ($value === '' || $value === null || $value === 0 || $value === '0') {
             unset($query[$key]);
@@ -55,9 +97,16 @@ function listingQueryUrl(array $changes = []): string
 
 websiteHeader(
     $heading . ' - GharSquare',
-    'Browse active property listings with real city, property type, price, bedroom and area filters.',
+    $metaDescription,
     'listing-page',
-    ['cities' => $cities, 'selected_city' => $selectedCity]
+    [
+        'cities' => $cities,
+        'selected_city' => $selectedCity,
+        'canonical' => $canonical,
+        'robots' => $hasDeepFilters || (int) $results['total'] === 0
+            ? 'noindex,follow'
+            : 'index,follow,max-image-preview:large',
+    ]
 );
 ?>
 <main class="listing-main" data-csrf-token="<?= e(csrfToken()) ?>">

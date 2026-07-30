@@ -11,6 +11,45 @@ $staticUrls = [
     ['loc' => siteWebsiteUrl(), 'priority' => '1.0', 'frequency' => 'daily'],
     ['loc' => siteListingUrl(), 'priority' => '0.9', 'frequency' => 'hourly'],
 ];
+$filterData = siteSearchFilterData();
+
+foreach (array_keys(siteListingRouteMap()) as $type) {
+    if ((int) siteSearchProperties(['type' => $type], 1)['total'] <= 0) {
+        continue;
+    }
+
+    $staticUrls[] = [
+        'loc' => siteListingUrl(['type' => $type]),
+        'priority' => '0.9',
+        'frequency' => 'daily',
+    ];
+}
+
+foreach (($filterData['cities'] ?? []) as $city) {
+    $cityName = trim((string) ($city['name'] ?? ''));
+
+    if ($cityName === '' || (int) ($city['property_count'] ?? 0) <= 0) {
+        continue;
+    }
+
+    $staticUrls[] = [
+        'loc' => siteListingUrl(['city' => $cityName]),
+        'priority' => '0.8',
+        'frequency' => 'daily',
+    ];
+
+    foreach (array_keys(siteListingRouteMap()) as $type) {
+        if ((int) siteSearchProperties(['type' => $type, 'city' => $cityName], 1)['total'] <= 0) {
+            continue;
+        }
+
+        $staticUrls[] = [
+            'loc' => siteListingUrl(['type' => $type, 'city' => $cityName]),
+            'priority' => '0.8',
+            'frequency' => 'daily',
+        ];
+    }
+}
 
 $statement = db()->query(
     "SELECT slug, COALESCE(published_at, created_at) AS last_modified

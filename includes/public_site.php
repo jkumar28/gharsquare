@@ -26,12 +26,52 @@ function sitePropertyUrl(array $property): string
     return APP_URL . '/property/' . rawurlencode(trim((string) ($property['slug'] ?? '')));
 }
 
+function siteListingRouteMap(): array
+{
+    return [
+        'buy' => 'properties-for-sale',
+        'rent' => 'properties-for-rent',
+        'commercial' => 'commercial-properties',
+        'pg' => 'pg-accommodation',
+        'plots' => 'plots-for-sale',
+    ];
+}
+
 function siteListingUrl(array $query = []): string
 {
-    $url = siteWebsiteUrl('listing');
     $query = array_filter($query, static fn (mixed $value): bool => $value !== null && $value !== '');
+    $type = strtolower(trim((string) ($query['type'] ?? '')));
+    $city = trim((string) ($query['city'] ?? ''));
+    $routes = siteListingRouteMap();
+
+    unset($query['type'], $query['city'], $query['city_slug'], $query['seo_route']);
+
+    if (isset($routes[$type])) {
+        $url = APP_URL . '/' . $routes[$type];
+    } else {
+        $url = siteWebsiteUrl('listing');
+    }
+
+    if ($city !== '') {
+        $url .= '/in-' . rawurlencode(slugify($city));
+    }
 
     return $query === [] ? $url : $url . '?' . http_build_query($query);
+}
+
+function siteCityNameFromSlug(string $slug, array $cities): string
+{
+    $slug = strtolower(trim($slug));
+
+    foreach ($cities as $city) {
+        $name = trim((string) ($city['name'] ?? ''));
+
+        if ($name !== '' && slugify($name) === $slug) {
+            return $name;
+        }
+    }
+
+    return '';
 }
 
 function siteCurrency(mixed $amount): string

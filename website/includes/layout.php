@@ -57,6 +57,7 @@ function websiteHeader(string $title, string $description, string $bodyClass = '
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title><?= e($title) ?></title>
     <meta name="description" content="<?= e($description) ?>">
+    <meta name="robots" content="<?= e((string) ($options['robots'] ?? 'index,follow,max-image-preview:large')) ?>">
     <link rel="canonical" href="<?= e($canonical) ?>">
     <meta property="og:title" content="<?= e($title) ?>">
     <meta property="og:description" content="<?= e($description) ?>">

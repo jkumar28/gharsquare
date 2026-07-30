@@ -8,6 +8,12 @@ RewriteRule ^(?:config|database|includes|storage|tests|vendor)(?:/|$) - [F,L,NC]
 
 # Search-engine-facing page routes.
 RewriteRule ^properties/?$ website/listing.php [L,QSA]
+RewriteRule ^properties/in-([a-z0-9-]+)/?$ website/listing.php?city_slug=$1&seo_route=1 [L,QSA,NC]
+RewriteRule ^properties-for-sale(?:/in-([a-z0-9-]+))?/?$ website/listing.php?type=buy&city_slug=$1&seo_route=1 [L,QSA,NC]
+RewriteRule ^properties-for-rent(?:/in-([a-z0-9-]+))?/?$ website/listing.php?type=rent&city_slug=$1&seo_route=1 [L,QSA,NC]
+RewriteRule ^commercial-properties(?:/in-([a-z0-9-]+))?/?$ website/listing.php?type=commercial&city_slug=$1&seo_route=1 [L,QSA,NC]
+RewriteRule ^pg-accommodation(?:/in-([a-z0-9-]+))?/?$ website/listing.php?type=pg&city_slug=$1&seo_route=1 [L,QSA,NC]
+RewriteRule ^plots-for-sale(?:/in-([a-z0-9-]+))?/?$ website/listing.php?type=plots&city_slug=$1&seo_route=1 [L,QSA,NC]
 RewriteRule ^property/([^/]+)/?$ website/property-details.php?slug=$1 [L,QSA,B]
 RewriteRule ^sitemap\.xml$ website/sitemap.php [L]
 RewriteRule ^robots\.txt$ website/robots.php [L]
