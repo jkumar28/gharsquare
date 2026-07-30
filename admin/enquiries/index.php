@@ -84,7 +84,7 @@ require BASE_PATH . '/admin/includes/header.php';
                     </td>
                     <td>
                         <?php if (($enquiry['slug'] ?? '') !== ''): ?>
-                            <a href="<?= e(siteWebsiteUrl('property-details?slug=' . rawurlencode((string) $enquiry['slug']))) ?>" target="_blank">
+                            <a href="<?= e(sitePropertyUrl(['slug' => (string) $enquiry['slug']])) ?>" target="_blank" rel="noopener">
                                 <strong><?= e((string) (($enquiry['title'] ?? '') ?: 'Property')) ?></strong>
                             </a>
                         <?php else: ?>

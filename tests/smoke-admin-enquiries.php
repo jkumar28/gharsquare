@@ -27,4 +27,8 @@ if (!str_contains($html, 'Property Enquiries') || !str_contains($html, 'Lead Inb
     throw new RuntimeException('The admin enquiry inbox did not render correctly.');
 }
 
+if (str_contains($html, '/property-details?slug=')) {
+    throw new RuntimeException('The admin enquiry inbox rendered a legacy property URL.');
+}
+
 echo 'Admin enquiry inbox smoke test passed.' . PHP_EOL;
