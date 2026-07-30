@@ -298,7 +298,7 @@ require BASE_PATH . '/admin/includes/header.php';
                             <?php if (GOOGLE_MAPS_API_KEY === ''): ?>
                                 <div class="map-picker-empty">
                                     <strong>Google Map is not enabled yet.</strong>
-                                    <p class="mb-0">Set `LOCAL_GOOGLE_MAPS_API_KEY` for localhost and `LIVE_GOOGLE_MAPS_API_KEY` for live server in your environment to enable the map picker.</p>
+                                    <p class="mb-0">Set `GOOGLE_MAPS_API_KEY` in the server environment or add it to `config/private/maps.php` to enable the map picker.</p>
                                 </div>
                             <?php else: ?>
                                 <div class="map-picker-toolbar">

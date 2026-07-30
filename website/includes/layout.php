@@ -124,7 +124,7 @@ function websiteFooter(array $options = []): void
                 <h5>Owners</h5>
                 <a href="<?= e(siteWebsiteUrl('post-property')) ?>">Post Property</a>
                 <a href="<?= e(siteWebsiteUrl('account?view=properties')) ?>">Manage Listings</a>
-                <p><i class="bi bi-envelope"></i> info@gharsquare.com</p>
+                <p><i class="bi bi-envelope"></i> <?= e(CONTACT_EMAIL) ?></p>
             </div>
         </div>
     </div>
