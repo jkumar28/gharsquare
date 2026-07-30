@@ -22,18 +22,24 @@ if (isPostRequest()) {
 
         if ($login === '' || $password === '') {
             $errors[] = 'Please enter your email/phone and password.';
+        } elseif (authRateLimitStatus('public_password_login', $login)['blocked']) {
+            $errors[] = 'Too many login attempts. Please wait before trying again.';
         } else {
             $user = findPublicUserByLogin($login);
 
             if (!$user || !password_verify($password, (string) $user['password'])) {
+                authRateLimitHit('public_password_login', $login, 5, 900, 900);
                 $errors[] = 'Invalid login details.';
             } elseif ((string) $user['status'] !== 'active') {
+                authRateLimitHit('public_password_login', $login, 5, 900, 900);
                 $errors[] = 'This account is not active.';
             } elseif (($user['email'] ?? '') !== '' && (int) ($user['email_verified'] ?? 0) !== 1) {
+                authRateLimitClear('public_password_login', $login);
                 $otp = publicAuthIssueEmailOtp($user, 'login');
                 setFlash('warning', publicAuthOtpMessage($otp));
                 redirect('verify-otp');
             } else {
+                authRateLimitClear('public_password_login', $login);
                 loginPublicUser($user);
                 setFlash('success', 'Welcome back, ' . (string) $user['name'] . '.');
                 publicAuthRedirectAfterLogin();
@@ -52,6 +58,8 @@ if (isPostRequest()) {
 
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errors[] = 'Please enter a valid registered email address.';
+        } elseif (authRateLimitStatus('public_otp_request', $email)['blocked']) {
+            $errors[] = 'Too many OTP requests. Please wait before requesting another code.';
         } else {
             $user = findPublicUserByEmail($email);
 
@@ -61,6 +69,7 @@ if (isPostRequest()) {
                 $errors[] = 'This account is not active.';
             } else {
                 $otp = publicAuthIssueEmailOtp($user, 'login');
+                authRateLimitHit('public_otp_request', $email, 3, 600, 600);
                 setFlash('success', publicAuthOtpMessage($otp));
                 redirect('verify-otp');
             }
@@ -83,6 +92,10 @@ if (isPostRequest()) {
             'role' => $data['role'],
         ]);
 
+        if (!$errors && authRateLimitStatus('public_registration', $data['email'])['blocked']) {
+            $errors[] = 'Too many registration attempts. Please wait before trying again.';
+        }
+
         if (!$errors) {
             $userId = createPublicUser($data);
             $user = findUser($userId);
@@ -91,6 +104,7 @@ if (isPostRequest()) {
                 $errors[] = 'Account created, but verification could not start. Please contact support.';
             } else {
                 $otp = publicAuthIssueEmailOtp($user, 'register');
+                authRateLimitHit('public_registration', $data['email'], 3, 3600, 3600);
                 setFlash('success', 'Account created. ' . publicAuthOtpMessage($otp));
                 redirect('verify-otp');
             }

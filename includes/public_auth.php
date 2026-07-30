@@ -252,6 +252,7 @@ function publicAuthPendingVerification(): ?array
 
 function publicAuthCreateEmailOtp(int $userId): string
 {
+    authCleanupExpiredRecords();
     $otp = (string) random_int(100000, 999999);
 
     $stmt = db()->prepare(
@@ -348,7 +349,7 @@ function publicAuthOtpMessage(string $otp): string
 function publicAuthVerifyEmailOtp(int $userId, string $otp): bool
 {
     $stmt = db()->prepare(
-        "SELECT id, otp
+        "SELECT id, otp, attempt_count, max_attempts
          FROM user_otps
          WHERE user_id = :user_id
            AND type = 'email'
@@ -360,11 +361,23 @@ function publicAuthVerifyEmailOtp(int $userId, string $otp): bool
     $stmt->execute([':user_id' => $userId]);
     $row = $stmt->fetch();
 
-    if (!$row || !hash_equals((string) $row['otp'], $otp)) {
+    if (!$row) {
         return false;
     }
 
-    $stmt = db()->prepare('UPDATE user_otps SET is_used = 1 WHERE id = :id');
+    if (!hash_equals((string) $row['otp'], $otp)) {
+        $attemptCount = (int) $row['attempt_count'] + 1;
+        $stmt = db()->prepare(
+            'UPDATE user_otps
+             SET attempt_count = :attempt_count,
+                 is_used = CASE WHEN :attempt_count >= max_attempts THEN 1 ELSE is_used END
+             WHERE id = :id'
+        );
+        $stmt->execute([':attempt_count' => $attemptCount, ':id' => (int) $row['id']]);
+        return false;
+    }
+
+    $stmt = db()->prepare('UPDATE user_otps SET is_used = 1, attempt_count = attempt_count + 1 WHERE id = :id');
     $stmt->execute([':id' => (int) $row['id']]);
 
     $stmt = db()->prepare('UPDATE users SET email_verified = 1 WHERE id = :id');

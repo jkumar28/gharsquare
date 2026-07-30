@@ -108,6 +108,134 @@ function jsonResponse(array $payload, int $status = 200): void
     exit;
 }
 
+function authClientIp(): string
+{
+    return substr(trim((string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown')), 0, 45);
+}
+
+function authRateLimitStatus(string $scope, string $identifier): array
+{
+    $stmt = db()->prepare(
+        'SELECT attempt_count, window_started_at, blocked_until
+         FROM auth_rate_limits
+         WHERE scope = :scope AND identifier_hash = :identifier_hash AND ip_address = :ip_address
+         LIMIT 1'
+    );
+    $stmt->execute([
+        ':scope' => $scope,
+        ':identifier_hash' => hash('sha256', strtolower(trim($identifier))),
+        ':ip_address' => authClientIp(),
+    ]);
+    $row = $stmt->fetch();
+    $blockedUntil = $row['blocked_until'] ?? null;
+    $retryAfter = $blockedUntil ? max(0, strtotime((string) $blockedUntil) - time()) : 0;
+
+    return [
+        'blocked' => $retryAfter > 0,
+        'retry_after' => $retryAfter,
+        'attempt_count' => (int) ($row['attempt_count'] ?? 0),
+    ];
+}
+
+function authRateLimitHit(
+    string $scope,
+    string $identifier,
+    int $maxAttempts,
+    int $windowSeconds,
+    int $blockSeconds
+): array {
+    $pdo = db();
+    $hash = hash('sha256', strtolower(trim($identifier)));
+    $ipAddress = authClientIp();
+    $pdo->beginTransaction();
+
+    try {
+        $stmt = $pdo->prepare(
+            'SELECT id, attempt_count, window_started_at, blocked_until
+             FROM auth_rate_limits
+             WHERE scope = :scope AND identifier_hash = :identifier_hash AND ip_address = :ip_address
+             LIMIT 1 FOR UPDATE'
+        );
+        $stmt->execute([
+            ':scope' => $scope,
+            ':identifier_hash' => $hash,
+            ':ip_address' => $ipAddress,
+        ]);
+        $row = $stmt->fetch();
+        $now = time();
+        $windowExpired = !$row || strtotime((string) $row['window_started_at']) <= $now - $windowSeconds;
+        $attemptCount = $windowExpired ? 1 : ((int) $row['attempt_count'] + 1);
+        $blocked = $attemptCount >= $maxAttempts;
+
+        if ($row) {
+            $update = $pdo->prepare(
+                'UPDATE auth_rate_limits
+                 SET attempt_count = :attempt_count,
+                     window_started_at = :window_started_at,
+                     blocked_until = :blocked_until,
+                     updated_at = NOW()
+                 WHERE id = :id'
+            );
+            $update->execute([
+                ':attempt_count' => $attemptCount,
+                ':window_started_at' => $windowExpired ? date('Y-m-d H:i:s', $now) : $row['window_started_at'],
+                ':blocked_until' => $blocked ? date('Y-m-d H:i:s', $now + $blockSeconds) : null,
+                ':id' => $row['id'],
+            ]);
+        } else {
+            $insert = $pdo->prepare(
+                'INSERT INTO auth_rate_limits
+                    (scope, identifier_hash, ip_address, attempt_count, window_started_at, blocked_until, updated_at)
+                 VALUES
+                    (:scope, :identifier_hash, :ip_address, :attempt_count, NOW(), :blocked_until, NOW())'
+            );
+            $insert->execute([
+                ':scope' => $scope,
+                ':identifier_hash' => $hash,
+                ':ip_address' => $ipAddress,
+                ':attempt_count' => $attemptCount,
+                ':blocked_until' => $blocked ? date('Y-m-d H:i:s', $now + $blockSeconds) : null,
+            ]);
+        }
+
+        $pdo->commit();
+
+        return ['blocked' => $blocked, 'retry_after' => $blocked ? $blockSeconds : 0];
+    } catch (Throwable $exception) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $exception;
+    }
+}
+
+function authRateLimitClear(string $scope, string $identifier): void
+{
+    $stmt = db()->prepare(
+        'DELETE FROM auth_rate_limits
+         WHERE scope = :scope AND identifier_hash = :identifier_hash AND ip_address = :ip_address'
+    );
+    $stmt->execute([
+        ':scope' => $scope,
+        ':identifier_hash' => hash('sha256', strtolower(trim($identifier))),
+        ':ip_address' => authClientIp(),
+    ]);
+}
+
+function authCleanupExpiredRecords(): void
+{
+    db()->exec(
+        "DELETE FROM user_otps
+         WHERE expires_at < DATE_SUB(NOW(), INTERVAL 1 DAY)
+            OR (is_used = 1 AND created_at < DATE_SUB(NOW(), INTERVAL 1 DAY))"
+    );
+    db()->exec(
+        "DELETE FROM auth_rate_limits
+         WHERE updated_at < DATE_SUB(NOW(), INTERVAL 7 DAY)
+           AND (blocked_until IS NULL OR blocked_until < NOW())"
+    );
+}
+
 function tableHasColumn(string $table, string $column): bool
 {
     static $cache = [];

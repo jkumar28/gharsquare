@@ -24,6 +24,7 @@ require BASE_PATH . '/admin/includes/header.php';
         </div>
 
         <form class="auth-form" method="post" action="<?= ADMIN_URL ?>/auth/process-login.php">
+            <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
             <h2>Admin Sign In</h2>
 
             <div class="mb-3">

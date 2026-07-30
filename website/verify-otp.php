@@ -28,19 +28,31 @@ if (isPostRequest()) {
     }
 
     if ($action === 'resend' && !$errors) {
-        $otp = publicAuthIssueEmailOtp($user, (string) $pending['purpose']);
-        setFlash('success', publicAuthOtpMessage($otp));
-        redirect('verify-otp');
+        $identifier = (string) $user['id'];
+        if (authRateLimitStatus('public_otp_resend', $identifier)['blocked']) {
+            $errors[] = 'Too many resend requests. Please wait before requesting another code.';
+        } else {
+            $otp = publicAuthIssueEmailOtp($user, (string) $pending['purpose']);
+            authRateLimitHit('public_otp_resend', $identifier, 3, 600, 600);
+            setFlash('success', publicAuthOtpMessage($otp));
+            redirect('verify-otp');
+        }
     }
 
     if ($action === 'verify' && !$errors) {
         $otp = preg_replace('/\D+/', '', (string) ($_POST['otp'] ?? ''));
+        $identifier = (string) $user['id'];
 
         if (!is_string($otp) || strlen($otp) !== 6) {
             $errors[] = 'Please enter the 6 digit OTP.';
+        } elseif (authRateLimitStatus('public_otp_verify', $identifier)['blocked']) {
+            $errors[] = 'Too many verification attempts. Please request a new code later.';
         } elseif (!publicAuthVerifyEmailOtp((int) $user['id'], $otp)) {
+            authRateLimitHit('public_otp_verify', $identifier, 10, 900, 900);
             $errors[] = 'Invalid or expired OTP.';
         } else {
+            authRateLimitClear('public_otp_verify', $identifier);
+            authRateLimitClear('public_otp_resend', $identifier);
             $verifiedUser = findUser((int) $user['id']);
 
             if (!$verifiedUser) {

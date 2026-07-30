@@ -47,6 +47,7 @@ function attemptAdminLogin(string $login, string $password): bool
     }
 
     unset($user['password']);
+    session_regenerate_id(true);
     $_SESSION['admin'] = $user;
 
     return true;
