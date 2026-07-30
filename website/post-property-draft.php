@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/public_auth.php';
 require_once BASE_PATH . '/includes/property.php';
+require_once BASE_PATH . '/includes/map_location.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -366,6 +367,7 @@ try {
                 throw new RuntimeException('India is not configured in country master.');
             }
             $stepInput['country_id'] = (int) $indiaCountry['id'];
+            $stepInput = resolveMapLocationHierarchy($stepInput);
         }
 
         if (isset($_POST['validate_step'])) {
@@ -417,5 +419,13 @@ try {
 
     postPropertyResponse(['success' => false, 'message' => 'Invalid action.'], 422);
 } catch (Throwable $exception) {
+    if ($exception instanceof PDOException) {
+        error_log('Property draft database error: ' . $exception->getMessage());
+        postPropertyResponse([
+            'success' => false,
+            'message' => 'We could not save this location. Please select the map address again and retry.',
+        ], 422);
+    }
+
     postPropertyResponse(['success' => false, 'message' => $exception->getMessage()], 422);
 }

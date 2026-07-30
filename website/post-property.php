@@ -359,6 +359,10 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
                                 <label for="country_display">Country</label>
                                 <input id="country_display" type="text" value="<?= e((string) $indiaCountry['name']) ?>" readonly aria-readonly="true">
                                 <input id="country_id" name="country_id" type="hidden" value="<?= e((string) $publicCountryId) ?>" data-country-select>
+                                <input id="map_country_name" name="map_country_name" type="hidden" value="<?= e((string) $indiaCountry['name']) ?>">
+                                <input id="map_state_name" name="map_state_name" type="hidden" value="">
+                                <input id="map_city_name" name="map_city_name" type="hidden" value="">
+                                <input id="map_locality_name" name="map_locality_name" type="hidden" value="">
                                 <small>Property listings are currently available in India only.</small>
                             </div>
                             <div class="post-field">

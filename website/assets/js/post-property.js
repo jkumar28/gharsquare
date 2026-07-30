@@ -843,14 +843,19 @@
             if (!hasValue(title)) addError("Enter a property title.", title);
             if (selectedListingMode() === "rent" && !hasValue(availableFrom)) addError("Select the available-from date.", availableFrom);
         } else if (step === "location") {
+            if (!hasValue(field("country_id"))) {
+                addError("Select a country.", field("country_id"));
+            }
+
             [
-                ["country_id", "Select a country."],
-                ["state_id", "Select a state."],
-                ["city_id", "Select a city."],
-                ["locality_id", "Select a locality."]
-            ].forEach(([name, message]) => {
-                const input = field(name);
-                if (!hasValue(input)) addError(message, input);
+                ["state_id", "map_state_name", "Select a state or choose an address from the map."],
+                ["city_id", "map_city_name", "Select a city or choose an address from the map."],
+                ["locality_id", "map_locality_name", "Select a locality or choose an address from the map."]
+            ].forEach(([idName, mapName, message]) => {
+                const idInput = field(idName);
+                if (!hasValue(idInput) && !hasValue(field(mapName))) {
+                    addError(message, idInput);
+                }
             });
         } else if (step === "profile") {
             const category = selectedCategory();
@@ -1149,6 +1154,14 @@
         const city = findLocationOptionByName(cityOptions, cityComponent?.long_name || "", cityComponent ? [cityComponent.short_name] : []);
         const localityOptions = localities.filter(item => !city || Number(item.city_id) === Number(city.id));
         const locality = findLocationOptionByName(localityOptions, localityComponent?.long_name || "", localityComponent ? [localityComponent.short_name] : []);
+
+        setFieldValue("#map_country_name", countryComponent?.long_name || "");
+        setFieldValue("#map_state_name", stateComponent?.long_name || "");
+        setFieldValue("#map_city_name", cityComponent?.long_name || "");
+        setFieldValue(
+            "#map_locality_name",
+            localityComponent?.long_name || cityComponent?.long_name || ""
+        );
 
         syncLocationSelects({
             country_id: country ? country.id : 0,
