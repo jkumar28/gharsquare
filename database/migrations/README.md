@@ -17,3 +17,12 @@ Example:
 Each file should begin with a short purpose comment. Prefer changes that are
 safe with existing data, explicitly name indexes and constraints, and avoid
 destructive operations unless a verified backup and deployment plan exist.
+
+Check and apply migrations from the project root:
+
+```powershell
+D:\xampp\php\php.exe database\migrate.php --status
+D:\xampp\php\php.exe database\migrate.php
+```
+
+Applied migration files are checksum-protected and must not be edited.

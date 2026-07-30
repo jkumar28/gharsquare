@@ -33,8 +33,21 @@ Credentials should be adjusted for the target environment.
 3. Make the migration safe to run against the current production schema.
 4. Include a comment explaining the purpose and any irreversible operation.
 5. Test it against a disposable copy of the database before deployment.
-6. Apply migrations in filename order and record deployed filenames in the
-   release notes until an automated migration runner is introduced.
+6. Check and apply migrations with the project runner:
+
+```powershell
+D:\xampp\php\php.exe database\migrate.php --status
+D:\xampp\php\php.exe database\migrate.php --dry-run
+D:\xampp\php\php.exe database\migrate.php
+```
+
+The runner creates a `schema_migrations` table, applies files in filename order,
+records their SHA-256 checksums, and prevents simultaneous migration runs.
+Changing a migration after it has been applied causes a checksum failure.
+
+`--mark-applied=FILENAME` is available only when adopting the runner on a
+database where that exact migration was previously applied and independently
+verified. It records the migration without executing its SQL.
 
 Do not edit an already-deployed migration. Add a new migration that corrects it.
 
