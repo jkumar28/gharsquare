@@ -764,7 +764,7 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
 
                 <section class="post-step-panel" data-step-panel="media">
                     <div class="post-panel-title"><span>Step 6</span><h2>Media</h2></div>
-                    <p class="post-context-note">Upload up to 20 images. Images are compressed to WebP and cropped to 4:3. Videos allow 20 MB and 1 minute maximum.</p>
+                    <p class="post-context-note">Upload up to 20 images. Every image is automatically center-cropped to 4:3, resized to 1600 × 1200, and compressed as WebP for consistent, faster listings.</p>
                     <div class="post-media-stats">
                         <div><strong data-property-image-count><?= e((string) $imageCount) ?></strong><span>Images</span></div>
                         <div><strong>20</strong><span>Max images</span></div>
@@ -780,7 +780,7 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
                                 <input id="image_files" name="image_files[]" type="file" accept="image/*" multiple>
                                 <span><i class="bi bi-images"></i></span>
                                 <strong>Upload Images</strong>
-                                <small>JPG, PNG, GIF, WEBP. First image becomes cover.</small>
+                                <small>JPG, PNG, GIF, WEBP up to 10 MB. Automatic 4:3 crop and compression.</small>
                             </label>
                         </form>
                         <form class="post-media-upload-form" method="post" action="post-property-media" enctype="multipart/form-data" data-upload-kind="video">

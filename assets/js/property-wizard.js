@@ -1122,12 +1122,76 @@
         return Promise.all(checks);
     }
 
+    function setMediaUploadState(form, active, percent, message) {
+        let indicator = form.querySelector('[data-media-upload-progress]');
+
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.className = 'media-upload-progress';
+            indicator.dataset.mediaUploadProgress = '';
+            indicator.innerHTML =
+                '<span class="media-upload-spinner" aria-hidden="true"></span>' +
+                '<div><strong data-media-upload-message>Uploading...</strong>' +
+                '<div class="media-upload-track"><span data-media-upload-bar></span></div>' +
+                '<small data-media-upload-percent>0%</small></div>';
+            form.appendChild(indicator);
+        }
+
+        const normalizedPercent = Math.max(0, Math.min(100, Math.round(percent || 0)));
+        form.classList.toggle('is-uploading', active);
+        indicator.hidden = !active;
+        indicator.querySelector('[data-media-upload-message]').textContent = message || 'Uploading...';
+        indicator.querySelector('[data-media-upload-bar]').style.width = normalizedPercent + '%';
+        indicator.querySelector('[data-media-upload-percent]').textContent = normalizedPercent + '%';
+        form.querySelectorAll('input, button').forEach(function (control) {
+            control.disabled = active;
+        });
+    }
+
+    function uploadMediaForm(form, data, onProgress) {
+        return new Promise(function (resolve, reject) {
+            const request = new XMLHttpRequest();
+            request.open((form.method || 'POST').toUpperCase(), form.action);
+            request.setRequestHeader('Accept', 'application/json');
+            request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            request.upload.addEventListener('progress', function (event) {
+                if (event.lengthComputable) {
+                    onProgress((event.loaded / event.total) * 100);
+                }
+            });
+            request.addEventListener('load', function () {
+                try {
+                    const payload = JSON.parse(request.responseText || '{}');
+                    if (request.status < 200 || request.status >= 300 || !payload.success) {
+                        reject(new Error(payload.message || 'Unable to upload media.'));
+                        return;
+                    }
+                    resolve(payload);
+                } catch (error) {
+                    reject(new Error('Unexpected server response. Please refresh and try again.'));
+                }
+            });
+            request.addEventListener('error', function () {
+                reject(new Error('Upload interrupted. Check your connection and try again.'));
+            });
+            request.addEventListener('abort', function () {
+                reject(new Error('Upload cancelled.'));
+            });
+            request.send(data);
+        });
+    }
+
     async function handleMediaForm(form) {
-        showLoading('Uploading media...');
+        if (form.dataset.uploading === 'true') {
+            return;
+        }
+
+        const uploadKind = form.dataset.uploadKind || '';
+        const formData = new FormData(form);
+        form.dataset.uploading = 'true';
+        setMediaUploadState(form, true, 0, uploadKind === 'youtube' ? 'Adding video...' : 'Preparing files...');
 
         try {
-            const uploadKind = form.dataset.uploadKind || '';
-
             if (uploadKind === 'video') {
                 const videoInput = form.querySelector('input[type="file"]');
 
@@ -1136,7 +1200,12 @@
                 }
             }
 
-            const payload = await postForm(form);
+            const payload = await uploadMediaForm(form, formData, function (percent) {
+                const message = percent >= 100
+                    ? (uploadKind === 'image' ? 'Compressing and cropping images...' : 'Processing media...')
+                    : 'Uploading media...';
+                setMediaUploadState(form, true, percent, message);
+            });
             refreshMediaGrid(payload);
             const fileInput = form.querySelector('input[type="file"]');
             const youtubeInput = form.querySelector('input[name="youtube_url"]');
@@ -1157,6 +1226,9 @@
             await showToast('success', payload.message || 'Media uploaded.', 1000);
         } catch (error) {
             await showToast('error', error.message || 'Unable to upload media.', 1600);
+        } finally {
+            delete form.dataset.uploading;
+            setMediaUploadState(form, false);
         }
     }
 

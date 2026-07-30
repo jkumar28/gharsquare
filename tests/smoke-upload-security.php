@@ -13,7 +13,7 @@ try {
         throw new RuntimeException('Unable to create a temporary image.');
     }
     $temporaryFiles[] = $validImagePath;
-    $image = imagecreatetruecolor(32, 24);
+    $image = imagecreatetruecolor(32, 48);
     imagepng($image, $validImagePath);
     imagedestroy($image);
 
@@ -24,9 +24,30 @@ try {
         'size' => filesize($validImagePath),
     ], 'image');
 
-    if ($validImage['mime'] !== 'image/png' || $validImage['width'] !== 32 || $validImage['height'] !== 24) {
+    if ($validImage['mime'] !== 'image/png' || $validImage['width'] !== 32 || $validImage['height'] !== 48) {
         throw new RuntimeException('A valid image was not inspected correctly.');
     }
+
+    $optimizedUrl = optimizeImageToWebp([
+        'name' => 'portrait.png',
+        'tmp_name' => $validImagePath,
+    ], 1);
+    $optimizedPath = str_replace(
+        '/',
+        DIRECTORY_SEPARATOR,
+        str_replace(propertyUploadBaseUrl(), propertyUploadBasePath(), $optimizedUrl)
+    );
+    $optimizedInfo = getimagesize($optimizedPath);
+
+    if (
+        $optimizedInfo === false
+        || (int) $optimizedInfo[0] !== 1600
+        || (int) $optimizedInfo[1] !== 1200
+        || (int) $optimizedInfo[2] !== IMAGETYPE_WEBP
+    ) {
+        throw new RuntimeException('Optimized images are not standardized to 1600 × 1200 WebP.');
+    }
+    $temporaryFiles[] = $optimizedPath;
 
     $maliciousPath = tempnam(sys_get_temp_dir(), 'gharsquare-script-');
     if ($maliciousPath === false) {

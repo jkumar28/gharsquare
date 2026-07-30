@@ -2321,6 +2321,63 @@ footer a {
     padding: 0;
 }
 
+.post-media-upload-form.is-uploading {
+    position: relative;
+    pointer-events: none;
+}
+
+.post-media-upload-form.is-uploading .post-media-dropzone {
+    opacity: .42;
+}
+
+.post-media-upload-progress {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .94);
+    padding: 18px;
+}
+
+.post-media-upload-progress[hidden] { display: none; }
+.post-media-upload-progress > div { width: min(230px, 75%); }
+.post-media-upload-progress strong,
+.post-media-upload-progress small { display: block; color: #273041; }
+
+.post-media-upload-track {
+    height: 7px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #dfe5ed;
+    margin: 8px 0 4px;
+}
+
+.post-media-upload-track span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--teal);
+    transition: width .15s ease;
+}
+
+.post-media-upload-spinner {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 auto;
+    border: 3px solid #d8e9e7;
+    border-top-color: var(--teal);
+    border-radius: 50%;
+    animation: post-media-spin .75s linear infinite;
+}
+
+@keyframes post-media-spin {
+    to { transform: rotate(360deg); }
+}
+
 .post-media-dropzone {
     min-height: 172px;
     cursor: pointer;

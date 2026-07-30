@@ -557,7 +557,7 @@ require BASE_PATH . '/admin/includes/header.php';
                               <span class="media-dropzone-icon"><i class="bi bi-images"></i></span>
                               <strong>Upload Property Images</strong>
                               <span>Drag images here or click to browse</span>
-                              <small>First image becomes cover photo automatically. JPG, PNG, WEBP supported.</small>
+                              <small>JPG, PNG, GIF, WEBP up to 10 MB. Automatically cropped to 4:3, resized to 1600 × 1200, and compressed as WebP.</small>
                           </label>
                       </div>
                   </form>

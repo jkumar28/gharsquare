@@ -1402,16 +1402,85 @@
         })));
     }
 
+    function setMediaUploadState(form, active, percent = 0, message = "Uploading...") {
+        let indicator = form.querySelector("[data-media-upload-progress]");
+
+        if (!indicator) {
+            indicator = document.createElement("div");
+            indicator.className = "post-media-upload-progress";
+            indicator.dataset.mediaUploadProgress = "";
+            indicator.innerHTML = `
+                <span class="post-media-upload-spinner" aria-hidden="true"></span>
+                <div>
+                    <strong data-media-upload-message>Uploading...</strong>
+                    <div class="post-media-upload-track"><span data-media-upload-bar></span></div>
+                    <small data-media-upload-percent>0%</small>
+                </div>`;
+            form.appendChild(indicator);
+        }
+
+        form.classList.toggle("is-uploading", active);
+        indicator.hidden = !active;
+        const normalizedPercent = Math.max(0, Math.min(100, Math.round(percent)));
+        indicator.querySelector("[data-media-upload-message]").textContent = message;
+        indicator.querySelector("[data-media-upload-bar]").style.width = `${normalizedPercent}%`;
+        indicator.querySelector("[data-media-upload-percent]").textContent = `${normalizedPercent}%`;
+        form.querySelectorAll("input, button").forEach(control => {
+            control.disabled = active;
+        });
+    }
+
+    function uploadMediaRequest(url, data, onProgress) {
+        return new Promise((resolve, reject) => {
+            const request = new XMLHttpRequest();
+            request.open("POST", url);
+            request.withCredentials = true;
+            request.setRequestHeader("Accept", "application/json");
+            request.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+            request.upload.addEventListener("progress", event => {
+                if (event.lengthComputable) {
+                    onProgress((event.loaded / event.total) * 100);
+                }
+            });
+            request.addEventListener("load", () => {
+                try {
+                    const payload = JSON.parse(request.responseText || "{}");
+                    if (payload.login_required && payload.login_url) {
+                        resolve(payload);
+                        return;
+                    }
+                    if (request.status < 200 || request.status >= 300 || !payload.success) {
+                        reject(new Error(payload.message || "Unable to upload media."));
+                        return;
+                    }
+                    resolve(payload);
+                } catch (error) {
+                    reject(new Error("Unexpected server response. Please refresh and try again."));
+                }
+            });
+            request.addEventListener("error", () => reject(new Error("Upload interrupted. Check your connection and try again.")));
+            request.addEventListener("abort", () => reject(new Error("Upload cancelled.")));
+            request.send(data);
+        });
+    }
+
     function postMediaForm(form) {
+        if (form.dataset.uploading === "true") {
+            return Promise.resolve();
+        }
+
         const data = new FormData(form);
+        const uploadKind = form.dataset.uploadKind || "";
+        form.dataset.uploading = "true";
+        setMediaUploadState(form, true, 0, uploadKind === "youtube" ? "Adding video..." : "Preparing files...");
         setStatus("Uploading media...", "saving");
 
-        return fetch(config.media_url || "post-property-media", {
-            method: "POST",
-            credentials: "same-origin",
-            body: data
+        return uploadMediaRequest(config.media_url || "post-property-media", data, percent => {
+            const message = percent >= 100
+                ? (uploadKind === "image" ? "Compressing and cropping images..." : "Processing media...")
+                : "Uploading media...";
+            setMediaUploadState(form, true, percent, message);
         })
-            .then(response => response.json())
             .then(payload => {
                 if (payload.login_required && payload.login_url) {
                     window.location.href = payload.login_url;
@@ -1439,6 +1508,10 @@
                     text: error.message || "Please try again."
                 });
                 throw error;
+            })
+            .finally(() => {
+                delete form.dataset.uploading;
+                setMediaUploadState(form, false);
             });
     }
 
