@@ -9,23 +9,7 @@ require_once BASE_PATH . '/vendor/autoload.php';
 
 function appMailLog(string $recipient, string $subject, string $html): bool
 {
-    $directory = BASE_PATH . '/storage/mail';
-    if (!is_dir($directory)) {
-        mkdir($directory, 0775, true);
-    }
-
-    $entry = sprintf(
-        "[%s] to=%s subject=%s%s%s%s",
-        date('Y-m-d H:i:s'),
-        $recipient,
-        $subject,
-        PHP_EOL,
-        trim(strip_tags(str_replace(['<br>', '<br/>', '<br />'], PHP_EOL, $html))),
-        PHP_EOL . str_repeat('-', 72) . PHP_EOL
-    );
-    if (@file_put_contents($directory . '/outbox.log', $entry, FILE_APPEND | LOCK_EX) !== false) {
-        return true;
-    }
+    $databaseLogged = false;
 
     try {
         $stmt = db()->prepare(
@@ -37,10 +21,28 @@ function appMailLog(string $recipient, string $subject, string $html): bool
             ':subject' => $subject,
             ':html_body' => $html,
         ]);
-        return true;
+        $databaseLogged = true;
     } catch (Throwable $exception) {
-        return false;
+        $databaseLogged = false;
     }
+
+    $directory = BASE_PATH . '/storage/mail';
+    if (!is_dir($directory)) {
+        @mkdir($directory, 0775, true);
+    }
+
+    $entry = sprintf(
+        "[%s] to=%s subject=%s%s%s%s",
+        date('Y-m-d H:i:s'),
+        $recipient,
+        $subject,
+        PHP_EOL,
+        trim(strip_tags(str_replace(['<br>', '<br/>', '<br />'], PHP_EOL, $html))),
+        PHP_EOL . str_repeat('-', 72) . PHP_EOL
+    );
+    $fileLogged = @file_put_contents($directory . '/outbox.log', $entry, FILE_APPEND | LOCK_EX) !== false;
+
+    return $databaseLogged || $fileLogged;
 }
 
 function appSendMail(string $recipient, string $subject, string $html, string $plainText = ''): array
