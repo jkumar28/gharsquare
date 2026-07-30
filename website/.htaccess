@@ -18,13 +18,8 @@ RewriteCond %{THE_REQUEST} \s/+(.+?)\.(html|php)[?\s] [NC]
 RewriteCond %{REQUEST_URI} ^(.+)\.(?:html|php)$ [NC]
 RewriteRule ^(.+)\.(html|php)$ %1 [R=301,L,NE]
 
-# Resolve extensionless routes to the existing static/PHP files.
+# Resolve extensionless routes to the existing PHP files.
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME}.php -f
 RewriteRule ^(.+?)/?$ $1.php [L,QSA]
-
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME}.html -f
-RewriteRule ^(.+?)/?$ $1.html [L,QSA]
