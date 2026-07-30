@@ -1318,6 +1318,107 @@ function propertyVideoMaxBytes(): int
     return 20 * 1024 * 1024;
 }
 
+function propertyImageMaxBytes(): int
+{
+    return 10 * 1024 * 1024;
+}
+
+function propertyImageMaxPixels(): int
+{
+    return 40_000_000;
+}
+
+function propertyAllowedImageMimes(): array
+{
+    return [
+        'image/jpeg' => IMAGETYPE_JPEG,
+        'image/png' => IMAGETYPE_PNG,
+        'image/gif' => IMAGETYPE_GIF,
+        'image/webp' => IMAGETYPE_WEBP,
+    ];
+}
+
+function propertyAllowedVideoMimes(): array
+{
+    return [
+        'video/mp4' => 'mp4',
+        'video/webm' => 'webm',
+        'video/quicktime' => 'mov',
+    ];
+}
+
+function propertyUploadErrorMessage(int $error): string
+{
+    return match ($error) {
+        UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'The uploaded file is too large.',
+        UPLOAD_ERR_PARTIAL => 'The file upload was interrupted. Please try again.',
+        UPLOAD_ERR_NO_FILE => 'Please choose a file to upload.',
+        UPLOAD_ERR_NO_TMP_DIR, UPLOAD_ERR_CANT_WRITE, UPLOAD_ERR_EXTENSION => 'The server could not accept the uploaded file.',
+        default => 'The file upload failed.',
+    };
+}
+
+function inspectPropertyMediaUpload(array $file, string $expectedKind): array
+{
+    $error = (int) ($file['error'] ?? UPLOAD_ERR_OK);
+    if ($error !== UPLOAD_ERR_OK) {
+        throw new RuntimeException(propertyUploadErrorMessage($error));
+    }
+
+    $temporaryPath = (string) ($file['tmp_name'] ?? '');
+    if ($temporaryPath === '' || !is_file($temporaryPath)) {
+        throw new RuntimeException('The uploaded file is missing.');
+    }
+    if (PHP_SAPI !== 'cli' && !is_uploaded_file($temporaryPath)) {
+        throw new RuntimeException('The file was not received through a valid upload.');
+    }
+
+    $size = (int) ($file['size'] ?? filesize($temporaryPath) ?: 0);
+    if ($size <= 0) {
+        throw new RuntimeException('Empty files cannot be uploaded.');
+    }
+
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime = strtolower((string) $finfo->file($temporaryPath));
+
+    if ($expectedKind === 'image') {
+        $allowedImages = propertyAllowedImageMimes();
+        if (!isset($allowedImages[$mime])) {
+            throw new RuntimeException('Only JPEG, PNG, GIF, or WebP images are allowed.');
+        }
+        if ($size > propertyImageMaxBytes()) {
+            throw new RuntimeException('Image size must be 10 MB or less.');
+        }
+
+        $imageInfo = getimagesize($temporaryPath);
+        if ($imageInfo === false || (int) ($imageInfo[2] ?? 0) !== $allowedImages[$mime]) {
+            throw new RuntimeException('The image signature does not match its format.');
+        }
+
+        $width = (int) ($imageInfo[0] ?? 0);
+        $height = (int) ($imageInfo[1] ?? 0);
+        if ($width <= 0 || $height <= 0 || $width > 10000 || $height > 10000 || $width * $height > propertyImageMaxPixels()) {
+            throw new RuntimeException('Image dimensions are too large.');
+        }
+
+        return ['kind' => 'image', 'mime' => $mime, 'size' => $size, 'width' => $width, 'height' => $height];
+    }
+
+    if ($expectedKind === 'video') {
+        $allowedVideos = propertyAllowedVideoMimes();
+        if (!isset($allowedVideos[$mime])) {
+            throw new RuntimeException('Only MP4, WebM, or MOV videos are allowed.');
+        }
+        if ($size > propertyVideoMaxBytes()) {
+            throw new RuntimeException('Video size must be 20 MB or less.');
+        }
+
+        return ['kind' => 'video', 'mime' => $mime, 'size' => $size, 'extension' => $allowedVideos[$mime]];
+    }
+
+    throw new RuntimeException('Unsupported upload type.');
+}
+
 function updatePropertyMediaTitle(int $draftId, int $mediaId, string $title): void
 {
     if (!tableHasColumn('property_media', 'title')) {
@@ -2024,12 +2125,15 @@ function propertyPublicMediaGridHtml(array $mediaItems): string
     return implode('', array_map('propertyPublicMediaCardHtml', $mediaItems));
 }
 
-function storeVideoUpload(array $file, int $draftId): string
+function storeVideoUpload(array $file, int $draftId, string $extension): string
 {
     $folders = ensurePropertyDraftFolders($draftId);
-    $extension = strtolower(pathinfo((string) $file['name'], PATHINFO_EXTENSION));
-    $extension = $extension !== '' ? $extension : 'mp4';
-    $filename = uniqid('video_', true) . '.' . $extension;
+    $allowedExtensions = array_values(propertyAllowedVideoMimes());
+    if (!in_array($extension, $allowedExtensions, true)) {
+        throw new RuntimeException('Unsupported video format.');
+    }
+
+    $filename = bin2hex(random_bytes(16)) . '.' . $extension;
     $targetPath = $folders['videos'] . '/' . $filename;
 
     if (!move_uploaded_file($file['tmp_name'], $targetPath)) {

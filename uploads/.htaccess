@@ -1,0 +1,12 @@
+Options -Indexes
+
+<FilesMatch "\.(?i:php|phtml|phar|php[0-9]+|cgi|pl|py|sh|shtml)$">
+    Require all denied
+</FilesMatch>
+
+RemoveHandler .php .phtml .phar .php3 .php4 .php5 .php7 .php8 .cgi .pl .py .sh .shtml
+RemoveType .php .phtml .phar .php3 .php4 .php5 .php7 .php8 .cgi .pl .py .sh .shtml
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>

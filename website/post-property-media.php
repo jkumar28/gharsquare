@@ -151,22 +151,16 @@ try {
     $uploadedKinds = [];
 
     for ($index = 0; $index < count($names); $index++) {
-        if ((int) $errors[$index] !== UPLOAD_ERR_OK) {
-            continue;
-        }
-
         $file = [
             'name' => $names[$index],
             'tmp_name' => $tmpNames[$index],
             'type' => $types[$index],
+            'error' => $errors[$index],
+            'size' => $sizes[$index] ?? null,
         ];
-        $mime = mime_content_type($file['tmp_name']) ?: $file['type'];
+        $inspection = inspectPropertyMediaUpload($file, $uploadKind);
 
-        if (str_starts_with((string) $mime, 'image/')) {
-            if ($uploadKind !== 'image') {
-                postPropertyMediaResponse(['success' => false, 'message' => 'Please upload images in the image box.'], 422);
-            }
-
+        if ($inspection['kind'] === 'image') {
             if ($currentImageCount >= 20) {
                 postPropertyMediaResponse(['success' => false, 'message' => 'Maximum 20 images are allowed per listing.'], 422);
             }
@@ -182,27 +176,15 @@ try {
             ]);
             $currentImageCount++;
             $uploadedKinds[] = 'image';
-        } elseif (str_starts_with((string) $mime, 'video/')) {
-            if ($uploadKind !== 'video') {
-                postPropertyMediaResponse(['success' => false, 'message' => 'Please upload videos in the video box.'], 422);
-            }
-
-            $uploadedSize = isset($sizes[$index]) ? (int) $sizes[$index] : (is_file($file['tmp_name']) ? filesize($file['tmp_name']) : null);
-
-            if ($uploadedSize !== null && $uploadedSize > propertyVideoMaxBytes()) {
-                postPropertyMediaResponse(['success' => false, 'message' => 'Video size must be 20 MB or less.'], 422);
-            }
-
-            $url = storeVideoUpload($file, $draftId);
+        } else {
+            $url = storeVideoUpload($file, $draftId, (string) $inspection['extension']);
             addPropertyMediaRecord($draftId, $url, 'video', 0, [
                 'source_type' => 'upload',
-                'mime_type' => $mime,
-                'file_size' => $uploadedSize,
+                'mime_type' => $inspection['mime'],
+                'file_size' => $inspection['size'],
                 'sort_order' => propertyNextMediaSortOrder($draftId),
             ]);
             $uploadedKinds[] = 'video';
-        } else {
-            postPropertyMediaResponse(['success' => false, 'message' => 'Unsupported media format.'], 422);
         }
     }
 
