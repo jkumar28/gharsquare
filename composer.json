@@ -1,0 +1,9 @@
+{
+    "name": "gharsquare/website",
+    "description": "GharSquare property marketplace application",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "phpmailer/phpmailer": "^6.9"
+    }
+}

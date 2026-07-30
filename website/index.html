@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>GharSquare - Smart Property Marketplace in India</title>
+    <meta name="description" content="Find verified flats, plots, villas, PG rooms and commercial spaces with GharSquare. Search property in your city with a cleaner, smarter experience.">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" rel="stylesheet">
+    <link href="assets/css/style.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg fixed-top premium-navbar">
+        <div class="container-fluid px-lg-5">
+            <a class="navbar-brand" href="./" aria-label="GharSquare home">
+                <span class="logo-icon"><i class="bi bi-house-fill"></i></span>
+                Ghar<span>Square</span>
+            </a>
+
+            <div class="header-location dropdown">
+                <button class="location-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-geo-alt-fill"></i>
+                    <span id="headerCity">Ranchi</span>
+                </button>
+
+                <div class="dropdown-menu location-dropdown">
+                    <input type="text" id="citySearch" class="form-control" placeholder="Search city...">
+                    <button class="dropdown-item city-option">Ranchi</button>
+                    <button class="dropdown-item city-option">Jamshedpur</button>
+                    <button class="dropdown-item city-option">Patna</button>
+                    <button class="dropdown-item city-option">Kolkata</button>
+                    <button class="dropdown-item city-option">Delhi</button>
+                </div>
+            </div>
+
+            <button class="navbar-toggler bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav mx-auto gap-lg-4">
+                    <li><a class="nav-link" href="listing?type=buy" data-nav-type="buy">Buyers</a></li>
+                    <li><a class="nav-link" href="listing?type=rent" data-nav-type="rent">Tenants</a></li>
+                    <li><a class="nav-link" href="#owner-cta">Owners</a></li>
+                    <li><a class="nav-link" href="#services">Services</a></li>
+                    <li><a class="nav-link" href="#experts">Experts</a></li>
+                </ul>
+
+                <div class="d-flex align-items-center gap-3">
+                    <a href="post-property" class="post-btn">Post Property <small>Free</small></a>
+                    <a href="login" class="btn btn-primary js-login-btn"><i class="bi bi-person-circle"></i> Login</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero-section" id="home">
+        <div class="hero-shape"></div>
+
+        <div class="container">
+            <div class="row align-items-center min-vh-60">
+                <div class="col-lg-8 mx-auto text-center hero-content">
+
+                    <h1 id="heroTitle">Find Your Dream Property with GharSquare</h1>
+                    <p id="heroSubTitle">India's Smart Property Marketplace</p>
+
+                    <div class="search-panel">
+                        <div class="search-tabs">
+                            <button class="tab-btn active" type="button" data-type="buy">Buy</button>
+                            <button class="tab-btn" type="button" data-type="rent">Rent</button>
+                            <button class="tab-btn" type="button" data-type="commercial">Commercial</button>
+                            <button class="tab-btn" type="button" data-type="pg">PG/Co-living</button>
+                            <button class="tab-btn" type="button" data-type="plots">Plots</button>
+                        </div>
+
+                        <div class="search-bar">
+                            <i class="bi bi-search"></i>
+                            <input id="searchInput" type="text"
+                                placeholder="Search for locality, landmark, project, or builder">
+                            <button type="button" id="searchBtn">Search</button>
+                        </div>
+                    </div>
+
+                    <div class="locality-row">
+                        <span class="locality-label"><i class="bi bi-stars"></i> Popular Localities</span>
+                        <div class="locality-chip-list" id="localityChipList" aria-live="polite">
+                            <span class="locality-loading">Loading localities...</span>
+                        </div>
+                    </div>
+
+                    <div class="owner-box" id="owner-cta">
+                        Own a property?
+                        <a href="post-property">List it for free</a>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 d-none d-lg-block">
+                    <div class="hero-slider-box">
+                        <div class="swiper heroSwiper">
+                            <div class="swiper-wrapper" id="heroSlides"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <section class="pt-3 pb-5 content-section" id="properties">
+        <div class="container">
+            <div class="section-heading">
+                <div>
+                    <h2 id="sectionTitle">Top highlighted projects</h2>
+                    <p id="sectionSubTitle">Noteworthy projects to watch</p>
+                </div>
+                <button class="view-btn js-view-all" type="button">View All <i class="bi bi-arrow-right"></i></button>
+            </div>
+
+            <div class="swiper propertySwiper">
+                <div class="swiper-wrapper" id="propertyCards"></div>
+                <div class="swiper-pagination"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5 category-section" id="categories">
+        <div class="container">
+            <div class="section-heading">
+                <div>
+                    <h2>Explore by property type</h2>
+                    <p>Smart categories for every customer need</p>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-6 col-lg-3">
+                    <div class="category-card" data-type="buy"><i class="bi bi-building"></i>
+                        <h5>Apartments</h5>
+                        <p>Buy premium flats</p>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <div class="category-card" data-type="rent"><i class="bi bi-key"></i>
+                        <h5>Rental Homes</h5>
+                        <p>Ready to move homes</p>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <div class="category-card" data-type="plots"><i class="bi bi-map"></i>
+                        <h5>Plots</h5>
+                        <p>Land investment</p>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <div class="category-card" data-type="commercial"><i class="bi bi-shop"></i>
+                        <h5>Commercial</h5>
+                        <p>Office, shop, showroom</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5 premium-features" id="services">
+        <div class="container">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-5">
+                    <h2>Why choose GharSquare?</h2>
+                    <p>Verified listings, quick discovery, local experts and owner-friendly posting help every visitor
+                        move from search to enquiry with confidence.</p>
+                    <button class="btn purple-btn js-start-exploring" type="button">Start Exploring</button>
+                </div>
+
+                <div class="col-lg-7">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="feature-card"><i class="bi bi-patch-check-fill"></i>
+                                <h5>Verified Listings</h5>
+                                <p>Trust focused property cards.</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="feature-card"><i class="bi bi-lightning-charge-fill"></i>
+                                <h5>Instant Search</h5>
+                                <p>Fast search experience.</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="feature-card"><i class="bi bi-phone-fill"></i>
+                                <h5>Mobile First</h5>
+                                <p>2 cards per row on mobile.</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="feature-card"><i class="bi bi-heart-fill"></i>
+                                <h5>Helpful Recommendations</h5>
+                                <p>Content adapts to user intent.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="quick-stats">
+        <div class="container">
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <h3>75K+</h3>
+                        <p>Verified Properties</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <h3>12K+</h3>
+                        <p>Happy Customers</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <h3>850+</h3>
+                        <p>Trusted Agents</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <h3>35+</h3>
+                        <p>Premium Cities</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <section class="py-5 agent-section" id="experts">
+        <div class="container">
+            <div class="section-heading">
+                <div>
+                    <h2>Top property experts</h2>
+                    <p>Connect with trusted real estate professionals</p>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="agent-card"><img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Rahul Singh">
+                        <h5>Rahul Singh</h5>
+                        <p>Ranchi Expert</p><button type="button" class="js-agent-contact" data-agent="Rahul Singh">Contact</button>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="agent-card"><img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Priya Sharma">
+                        <h5>Priya Sharma</h5>
+                        <p>Rental Expert</p><button type="button" class="js-agent-contact" data-agent="Priya Sharma">Contact</button>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="agent-card"><img src="https://randomuser.me/api/portraits/men/51.jpg" alt="Amit Kumar">
+                        <h5>Amit Kumar</h5>
+                        <p>Plot Expert</p><button type="button" class="js-agent-contact" data-agent="Amit Kumar">Contact</button>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="agent-card"><img src="https://randomuser.me/api/portraits/women/65.jpg" alt="Neha Verma">
+                        <h5>Neha Verma</h5>
+                        <p>Commercial Expert</p><button type="button" class="js-agent-contact" data-agent="Neha Verma">Contact</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer id="footer">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <h3>Ghar<span>Square</span></h3>
+                    <p>Smart property discovery for buyers, tenants, owners and local real estate professionals.</p>
+                </div>
+                <div class="col-md-2">
+                    <h5>Company</h5>
+                    <a href="#home">About</a>
+                    <a href="#footer">Contact</a>
+                    <a href="#experts">Experts</a>
+                </div>
+                <div class="col-md-3">
+                    <h5>Services</h5>
+                    <a href="listing?type=buy" data-nav-type="buy">Buy Property</a>
+                    <a href="listing?type=rent" data-nav-type="rent">Rent Property</a>
+                    <a href="post-property">Sell Property</a>
+                </div>
+                <div class="col-md-3">
+                    <h5>Contact</h5>
+                    <p><i class="bi bi-phone"></i> <a href="tel:+917004757477">+91 7004757477</a></p>
+                    <p><i class="bi bi-envelope"></i> <a href="mailto:info@gharsquare.com">info@gharsquare.com</a></p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <a href="https://wa.me/917004757477?text=Hi%20GharSquare%2C%20I%20need%20help%20with%20property%20search" class="whatsapp-btn" target="_blank" rel="noopener" aria-label="Chat with GharSquare on WhatsApp"><i class="bi bi-whatsapp"></i></a>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="assets/js/auth-ui.js"></script>
+    <script src="assets/js/script.js"></script>
+
+</body>
+
+</html>

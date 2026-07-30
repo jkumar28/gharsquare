@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" fill="none">
+  <rect width="1200" height="900" rx="36" fill="#F4F7F5"/>
+  <rect x="86" y="78" width="1028" height="744" rx="30" fill="#E1EFEA"/>
+  <path d="M192 585L392 420L540 536L694 362L936 585V690H192V585Z" fill="#7CB8A8"/>
+  <path d="M322 356H458V690H322V356Z" fill="#F9FCFB"/>
+  <path d="M486 472H640V690H486V472Z" fill="#F9FCFB"/>
+  <path d="M668 406H812V690H668V406Z" fill="#F9FCFB"/>
+  <circle cx="884" cy="264" r="62" fill="#F7C9AE"/>
+  <text x="120" y="786" fill="#26423D" font-family="Arial, sans-serif" font-size="48" font-weight="700">Property Image Coming Soon</text>
+</svg>

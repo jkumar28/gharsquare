@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Property Details - GharSquare</title>
+    <meta name="description" content="View property price, photos, location, amenities, agent details and similar listings on GharSquare.">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="assets/css/style.css" rel="stylesheet">
+</head>
+
+<body class="details-page">
+
+    <nav class="navbar navbar-expand-lg fixed-top premium-navbar">
+        <div class="container-fluid px-lg-5">
+            <a class="navbar-brand" href="./" aria-label="GharSquare home">
+                <span class="logo-icon"><i class="bi bi-house-fill"></i></span>
+                Ghar<span>Square</span>
+            </a>
+
+            <div class="header-location dropdown">
+                <button class="location-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-geo-alt-fill"></i>
+                    <span id="headerCity">Ranchi</span>
+                </button>
+
+                <div class="dropdown-menu location-dropdown">
+                    <input type="text" id="citySearch" class="form-control" placeholder="Search city...">
+                    <button class="dropdown-item city-option" type="button">Ranchi</button>
+                    <button class="dropdown-item city-option" type="button">Jamshedpur</button>
+                    <button class="dropdown-item city-option" type="button">Patna</button>
+                    <button class="dropdown-item city-option" type="button">Kolkata</button>
+                    <button class="dropdown-item city-option" type="button">Delhi</button>
+                </div>
+            </div>
+
+            <button class="navbar-toggler bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav mx-auto gap-lg-4">
+                    <li><a class="nav-link" href="listing?type=buy">Buyers</a></li>
+                    <li><a class="nav-link" href="listing?type=rent">Tenants</a></li>
+                    <li><a class="nav-link" href="./#owner-cta">Owners</a></li>
+                    <li><a class="nav-link" href="./#services">Services</a></li>
+                    <li><a class="nav-link" href="./#experts">Experts</a></li>
+                </ul>
+
+                <div class="d-flex align-items-center gap-3">
+                    <a href="post-property" class="post-btn">Post Property <small>Free</small></a>
+                    <a href="login" class="btn btn-primary js-login-btn"><i class="bi bi-person-circle"></i> Login</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="details-main">
+        <section class="details-hero">
+            <div class="container-fluid px-lg-5">
+                <div class="details-breadcrumb">
+                    <a href="./">Home</a>
+                    <i class="bi bi-chevron-right"></i>
+                    <a id="detailsListingBack" href="listing?type=buy">Listings</a>
+                    <i class="bi bi-chevron-right"></i>
+                    <span id="breadcrumbTitle">Property</span>
+                </div>
+
+                <div class="details-top-grid">
+                    <div class="details-gallery">
+                        <div class="main-photo">
+                            <img id="detailMainImage" src="" alt="Property image">
+                            <span class="photo-count" id="photoCount">0 Photos</span>
+                            <button type="button" class="gallery-nav gallery-prev" id="galleryPrev" aria-label="Previous photo"><i class="bi bi-chevron-left"></i></button>
+                            <button type="button" class="gallery-nav gallery-next" id="galleryNext" aria-label="Next photo"><i class="bi bi-chevron-right"></i></button>
+                        </div>
+                        <div class="thumb-row" id="detailThumbs"></div>
+                    </div>
+
+                    <div class="details-summary-panel">
+                        <div class="summary-badges" id="summaryBadges"></div>
+                        <h1 id="detailTitle">Property title</h1>
+                        <p class="detail-location" id="detailLocation"><i class="bi bi-geo-alt"></i></p>
+                        <div class="detail-price" id="detailPrice">Price</div>
+
+                        <div class="detail-spec-grid" id="detailSpecs"></div>
+
+                        <div class="detail-action-row">
+                            <button type="button" class="primary-action" id="enquireBtn"><i class="bi bi-send"></i> Enquire</button>
+                            <a class="secondary-action" id="callBtn" href="tel:+917004757477"><i class="bi bi-telephone"></i> Call</a>
+                            <a class="secondary-action" id="whatsappBtn" href="https://wa.me/917004757477?text=Hi%20GharSquare%2C%20I%20am%20interested%20in%20a%20property" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+                            <button type="button" class="icon-action" id="savePropertyBtn" aria-label="Save property"><i class="bi bi-heart"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="details-content">
+            <div class="container-fluid px-lg-5">
+                <div class="details-layout">
+                    <div class="details-left">
+                        <section class="detail-panel">
+                            <div class="detail-section-heading">
+                                <h2>Overview</h2>
+                                <span id="postedText">Updated today</span>
+                            </div>
+                            <div class="overview-grid" id="overviewGrid"></div>
+                        </section>
+
+                        <section class="detail-panel">
+                            <div class="detail-section-heading">
+                                <h2>Description</h2>
+                            </div>
+                            <p class="property-description" id="propertyDescription"></p>
+                        </section>
+
+                        <section class="detail-panel">
+                            <div class="detail-section-heading">
+                                <h2>Amenities</h2>
+                            </div>
+                            <div class="amenity-grid" id="amenityGrid"></div>
+                        </section>
+
+                        <section class="detail-panel">
+                            <div class="detail-section-heading">
+                                <h2>Location</h2>
+                                <span id="localityBadge">Locality view</span>
+                            </div>
+                            <div class="detail-location-grid">
+                                <div class="detail-map">
+                                    <div class="detail-map-pin" id="detailMapPin"><i class="bi bi-geo-alt-fill"></i></div>
+                                </div>
+                                <div class="nearby-list" id="nearbyList"></div>
+                            </div>
+                        </section>
+
+                        <section class="detail-panel">
+                            <div class="detail-section-heading">
+                                <h2>Similar Properties</h2>
+                            </div>
+                            <div class="similar-grid" id="similarGrid"></div>
+                        </section>
+                    </div>
+
+                    <aside class="contact-panel">
+                        <div class="agent-mini">
+                            <img id="agentPhoto" src="" alt="Property agent">
+                            <div>
+                                <h3 id="agentName">Agent</h3>
+                                <p id="agentRole">Property expert</p>
+                            </div>
+                        </div>
+
+                        <div class="agent-verified">
+                            <i class="bi bi-patch-check-fill"></i>
+                            <span>Verified GharSquare partner</span>
+                        </div>
+
+                        <div class="contact-actions">
+                            <button type="button" id="agentEnquireBtn"><i class="bi bi-chat-left-text"></i> Send Enquiry</button>
+                            <a id="agentCallBtn" href="tel:+917004757477"><i class="bi bi-telephone"></i> Call Agent</a>
+                        </div>
+
+                        <div class="visit-box">
+                            <h4>Schedule a visit</h4>
+                            <div class="visit-options" id="visitOptions">
+                                <button type="button">Today</button>
+                                <button type="button">Tomorrow</button>
+                                <button type="button">Weekend</button>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer id="footer">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <h3>Ghar<span>Square</span></h3>
+                    <p>Smart property discovery for buyers, tenants, owners and local real estate professionals.</p>
+                </div>
+                <div class="col-md-2">
+                    <h5>Company</h5>
+                    <a href="./#home">About</a>
+                    <a href="#footer">Contact</a>
+                    <a href="./#experts">Experts</a>
+                </div>
+                <div class="col-md-3">
+                    <h5>Services</h5>
+                    <a href="listing?type=buy">Buy Property</a>
+                    <a href="listing?type=rent">Rent Property</a>
+                    <a href="post-property">Sell Property</a>
+                </div>
+                <div class="col-md-3">
+                    <h5>Contact</h5>
+                    <p><i class="bi bi-phone"></i> <a href="tel:+917004757477">+91 7004757477</a></p>
+                    <p><i class="bi bi-envelope"></i> <a href="mailto:info@gharsquare.com">info@gharsquare.com</a></p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="assets/js/auth-ui.js"></script>
+    <script src="assets/js/property-details.js"></script>
+</body>
+
+</html>

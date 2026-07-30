@@ -1,0 +1,30 @@
+DirectoryIndex index.php
+Options -MultiViews
+
+RewriteEngine On
+
+# Canonical clean URLs for public website pages.
+RewriteCond %{REQUEST_METHOD} =GET
+RewriteCond %{THE_REQUEST} \s/+(.*/)?index\.html[?\s] [NC]
+RewriteCond %{REQUEST_URI} ^(.*/)index\.html$ [NC]
+RewriteRule ^index\.html$ %1 [R=301,L,NE]
+
+RewriteCond %{REQUEST_METHOD} =GET
+RewriteCond %{REQUEST_URI} ^(.*/)index/?$ [NC]
+RewriteRule ^index/?$ %1 [R=301,L,NE]
+
+RewriteCond %{REQUEST_METHOD} =GET
+RewriteCond %{THE_REQUEST} \s/+(.+?)\.(html|php)[?\s] [NC]
+RewriteCond %{REQUEST_URI} ^(.+)\.(?:html|php)$ [NC]
+RewriteRule ^(.+)\.(html|php)$ %1 [R=301,L,NE]
+
+# Resolve extensionless routes to the existing static/PHP files.
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.+?)/?$ $1.php [L,QSA]
+
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^(.+?)/?$ $1.html [L,QSA]
