@@ -13,6 +13,11 @@
         return `${base.replace(/\/$/, "")}/${String(path || "").replace(/^\//, "")}`;
     }
 
+    function absoluteLink(url, fallback) {
+        const value = String(url || fallback || "");
+        return /^(?:https?:)?\/\//i.test(value) ? value : endpoint(value);
+    }
+
     function trackActivity(payload) {
         const body = JSON.stringify(Object.assign({
             page_url: window.location.href,
@@ -38,7 +43,7 @@
         const user = state.user || {};
         const links = state.links || [];
         const linkHtml = links.map(function (link) {
-            return `<a href="${escapeHtml(link.href)}">${escapeHtml(link.label)}</a>`;
+            return `<a href="${escapeHtml(absoluteLink(link.href, "account"))}">${escapeHtml(link.label)}</a>`;
         }).join("");
 
         return `
@@ -58,7 +63,7 @@
                         </div>
                     </div>
                     <div class="account-dropdown-links">${linkHtml}</div>
-                    <a class="account-logout" href="${escapeHtml(state.logout_url || "logout")}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                    <a class="account-logout" href="${escapeHtml(absoluteLink(state.logout_url, "logout"))}"><i class="bi bi-box-arrow-right"></i> Logout</a>
                 </div>
             </div>
         `;
@@ -81,7 +86,7 @@
                     if (state.logged_in) {
                         button.outerHTML = accountDropdown(state);
                     } else {
-                        button.setAttribute("href", state.login_url || "login");
+                        button.setAttribute("href", absoluteLink(state.login_url, "login"));
                     }
                 });
 
@@ -89,7 +94,7 @@
             })
             .catch(function () {
                 loginButtons.forEach(function (button) {
-                    button.setAttribute("href", "login?redirect=" + encodeURIComponent(window.location.href));
+                    button.setAttribute("href", endpoint("login?redirect=" + encodeURIComponent(window.location.href)));
                 });
             });
     }
