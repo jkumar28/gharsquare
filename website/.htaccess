@@ -3,23 +3,11 @@ Options -MultiViews
 
 RewriteEngine On
 
-# Canonical clean URLs for public website pages.
-RewriteCond %{REQUEST_METHOD} =GET
-RewriteCond %{THE_REQUEST} \s/+(.*/)?index\.html[?\s] [NC]
-RewriteCond %{REQUEST_URI} ^(.*/)index\.html$ [NC]
-RewriteRule ^index\.html$ %1 [R=301,L,NE]
+# Keep physical frontend assets available while removing this directory from page URLs.
+RewriteRule ^assets/ - [L,NC]
 
-RewriteCond %{REQUEST_METHOD} =GET
-RewriteCond %{REQUEST_URI} ^(.*/)index/?$ [NC]
-RewriteRule ^index/?$ %1 [R=301,L,NE]
+RewriteCond %{THE_REQUEST} \s/+.*?/website(?:/[^?\s]*)?[\s?] [NC]
+RewriteRule ^$ legacy-redirect.php?route=index [L,QSA]
 
-RewriteCond %{REQUEST_METHOD} =GET
-RewriteCond %{THE_REQUEST} \s/+(.+?)\.(html|php)[?\s] [NC]
-RewriteCond %{REQUEST_URI} ^(.+)\.(?:html|php)$ [NC]
-RewriteRule ^(.+)\.(html|php)$ %1 [R=301,L,NE]
-
-# Resolve extensionless routes to the existing PHP files.
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME}.php -f
-RewriteRule ^(.+?)/?$ $1.php [L,QSA]
+RewriteCond %{THE_REQUEST} \s/+.*?/website/[^?\s]*[\s?] [NC]
+RewriteRule ^(.+?)(?:\.(?:php|html))?/?$ legacy-redirect.php?route=$1 [L,QSA,NC]

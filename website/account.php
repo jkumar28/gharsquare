@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/public_auth.php';
+require_once BASE_PATH . '/includes/public_site.php';
 
 if (!isPublicUserLoggedIn()) {
     redirect(publicAuthLoginUrl(publicAuthCurrentUrl()));
@@ -73,7 +74,7 @@ function accountPropertyUrl(array $item): string
         'city' => (string) (($item['city'] ?? '') ?: 'Ranchi'),
     ]);
 
-    return 'property-details?' . $query;
+    return siteWebsiteUrl('properties') . '?' . $query;
 }
 
 function accountPropertyMeta(array $item): string
@@ -141,7 +142,7 @@ $nav = [
     <meta name="description" content="Manage your GharSquare profile, properties, enquiries and activity.">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="assets/css/style.css?v=<?= e((string) filemtime(__DIR__ . '/assets/css/style.css')) ?>" rel="stylesheet">
+    <link href="<?= e(APP_URL) ?>/website/assets/css/style.css?v=<?= e((string) filemtime(__DIR__ . '/assets/css/style.css')) ?>" rel="stylesheet">
 </head>
 
 <body class="account-page">
@@ -157,8 +158,8 @@ $nav = [
             <div class="collapse navbar-collapse" id="mainNav">
                 <ul class="navbar-nav mx-auto gap-lg-4">
                     <li><a class="nav-link" href="./">Home</a></li>
-                    <li><a class="nav-link" href="listing?type=buy">Buyers</a></li>
-                    <li><a class="nav-link" href="listing?type=rent">Tenants</a></li>
+                    <li><a class="nav-link" href="<?= e(siteListingUrl(['type' => 'buy'])) ?>">Buyers</a></li>
+                    <li><a class="nav-link" href="<?= e(siteListingUrl(['type' => 'rent'])) ?>">Tenants</a></li>
                     <li><a class="nav-link" href="./#owner-cta">Owners</a></li>
                 </ul>
                 <a href="logout" class="btn btn-primary"><i class="bi bi-box-arrow-right"></i> Logout</a>
@@ -192,7 +193,7 @@ $nav = [
                         <span class="auth-kicker">Account</span>
                         <h2><?= e(accountViewTitle($view)) ?></h2>
                     </div>
-                    <a href="listing?type=buy">Browse Listings</a>
+                    <a href="<?= e(siteListingUrl(['type' => 'buy'])) ?>">Browse Listings</a>
                 </div>
 
                 <?php if ($flash): ?>
@@ -365,7 +366,7 @@ $nav = [
                                             <span class="account-tag"><?= e(accountEnquiryStatusLabel((string) $lead['status'])) ?></span>
                                             <h4>
                                                 <?php if (($lead['slug'] ?? '') !== ''): ?>
-                                                    <a href="property-details?slug=<?= e(rawurlencode((string) $lead['slug'])) ?>"><?= e((string) (($lead['title'] ?? '') ?: 'Property enquiry')) ?></a>
+                                                    <a href="<?= e(APP_URL . '/property/' . rawurlencode((string) $lead['slug'])) ?>"><?= e((string) (($lead['title'] ?? '') ?: 'Property enquiry')) ?></a>
                                                 <?php else: ?>
                                                     <?= e((string) (($lead['title'] ?? '') ?: 'Property enquiry')) ?>
                                                 <?php endif; ?>
@@ -425,7 +426,7 @@ $nav = [
                             </div>
                         <?php else: ?>
                             <p class="account-muted">No saved properties yet. Save homes from listings or property details to compare them later.</p>
-                            <a class="account-action" href="listing?type=buy">Browse Listings</a>
+                            <a class="account-action" href="<?= e(siteListingUrl(['type' => 'buy'])) ?>">Browse Listings</a>
                         <?php endif; ?>
                     </div>
                 <?php elseif ($view === 'enquiries'): ?>
@@ -447,7 +448,7 @@ $nav = [
                             </div>
                         <?php else: ?>
                             <p class="account-muted">No enquiries yet. When you enquire on a property, it will appear here with follow-up status.</p>
-                            <a class="account-action" href="listing?type=rent">Find Properties</a>
+                            <a class="account-action" href="<?= e(siteListingUrl(['type' => 'rent'])) ?>">Find Properties</a>
                         <?php endif; ?>
                     </div>
                 <?php elseif ($view === 'activity'): ?>
@@ -475,8 +476,8 @@ $nav = [
         </section>
     </main>
 
-    <script src="assets/js/auth-ui.js"></script>
-    <script src="assets/js/account.js"></script>
+    <script src="<?= e(APP_URL) ?>/website/assets/js/auth-ui.js?v=<?= e((string) filemtime(__DIR__ . '/assets/js/auth-ui.js')) ?>"></script>
+    <script src="<?= e(APP_URL) ?>/website/assets/js/account.js?v=<?= e((string) filemtime(__DIR__ . '/assets/js/account.js')) ?>"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 

@@ -187,7 +187,7 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
     <meta name="description" content="Post a property on GharSquare using a step-by-step draft wizard.">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="assets/css/style.css?v=<?= e((string) filemtime(__DIR__ . '/assets/css/style.css')) ?>" rel="stylesheet">
+    <link href="<?= e(APP_URL) ?>/website/assets/css/style.css?v=<?= e((string) filemtime(__DIR__ . '/assets/css/style.css')) ?>" rel="stylesheet">
 </head>
 
 <body class="post-property-page">
@@ -203,8 +203,8 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
             <div class="collapse navbar-collapse" id="mainNav">
                 <ul class="navbar-nav mx-auto gap-lg-4">
                     <li><a class="nav-link" href="./">Home</a></li>
-                    <li><a class="nav-link" href="listing?type=buy">Buyers</a></li>
-                    <li><a class="nav-link" href="listing?type=rent">Tenants</a></li>
+                    <li><a class="nav-link" href="<?= e(APP_URL) ?>/properties?type=buy">Buyers</a></li>
+                    <li><a class="nav-link" href="<?= e(APP_URL) ?>/properties?type=rent">Tenants</a></li>
                     <li><a class="nav-link" href="account?view=properties">My Properties</a></li>
                 </ul>
                 <a href="account?view=properties" class="btn btn-primary"><i class="bi bi-house-check"></i> My Properties</a>
@@ -889,7 +889,7 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
             ],
         ], JSON_UNESCAPED_SLASHES) ?>;
     </script>
-    <script src="assets/js/post-property.js?v=<?= e((string) filemtime(__DIR__ . '/assets/js/post-property.js')) ?>"></script>
+    <script src="<?= e(APP_URL) ?>/website/assets/js/post-property.js?v=<?= e((string) filemtime(__DIR__ . '/assets/js/post-property.js')) ?>"></script>
 </body>
 
 </html>

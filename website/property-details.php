@@ -7,6 +7,11 @@ require_once __DIR__ . '/includes/layout.php';
 $slug = trim((string) ($_GET['slug'] ?? ''));
 $property = $slug !== '' ? siteFindPropertyBySlug($slug) : null;
 
+if ($property && !preg_match('~/property/[^/?]+/?$~', (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH))) {
+    header('Location: ' . sitePropertyUrl($property), true, 301);
+    exit;
+}
+
 if (!$property) {
     http_response_code(404);
     websiteHeader(
@@ -215,9 +220,38 @@ websiteHeader(
         'selected_city' => (string) ($property['city_name'] ?? ''),
         'canonical' => $canonical,
         'image' => (string) ($property['primary_image'] ?? ''),
+        'og_type' => 'article',
     ]
 );
+$structuredData = [
+    '@context' => 'https://schema.org',
+    '@type' => 'RealEstateListing',
+    'name' => (string) $property['title'],
+    'description' => substr($metaDescription, 0, 500),
+    'url' => $canonical,
+    'image' => array_values(array_filter(array_map(
+        static fn (array $image): string => (string) ($image['file_url'] ?? ''),
+        $images
+    ))),
+    'datePosted' => $publishedAt !== '' ? date('c', strtotime($publishedAt)) : null,
+    'address' => [
+        '@type' => 'PostalAddress',
+        'streetAddress' => trim((string) ($property['address_line'] ?? '')),
+        'addressLocality' => trim((string) ($property['city_name'] ?? '')),
+        'addressRegion' => trim((string) ($property['state_name'] ?? '')),
+        'postalCode' => trim((string) ($property['pincode'] ?? '')),
+        'addressCountry' => trim((string) ($property['country_name'] ?? 'India')),
+    ],
+    'offers' => [
+        '@type' => 'Offer',
+        'price' => sitePropertyNumericPrice($property),
+        'priceCurrency' => 'INR',
+        'availability' => 'https://schema.org/InStock',
+        'url' => $canonical,
+    ],
+];
 ?>
+<script type="application/ld+json"><?= json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?></script>
 <main class="details-main" data-property-id="<?= e((string) $property['id']) ?>" data-csrf-token="<?= e(csrfToken()) ?>">
     <section class="details-hero">
         <div class="container-fluid px-lg-5">

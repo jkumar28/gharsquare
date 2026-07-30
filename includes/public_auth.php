@@ -17,7 +17,7 @@ function publicAuthCurrentUrl(): string
     $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
 
     if (preg_match('/(?:^|\\/)(?:login|verify-otp|logout)(?:\\.php)?(?:[?#]|$)/', $uri)) {
-        return APP_URL . '/website/';
+        return APP_URL . '/';
     }
 
     return publicAuthCleanWebsiteUrl($uri);
@@ -25,8 +25,10 @@ function publicAuthCurrentUrl(): string
 
 function publicAuthCleanWebsiteUrl(string $url): string
 {
-    $url = preg_replace('~/website/index\.html(?=([?#]|$))~i', '/website/', $url) ?? $url;
-    $url = preg_replace('~/website/([^/?#]+)\.(?:php|html)(?=([?#]|$))~i', '/website/$1', $url) ?? $url;
+    $url = preg_replace('~/website/(?:index(?:\.(?:php|html))?)?(?=([?#]|$))~i', '/', $url) ?? $url;
+    $url = preg_replace('~/website/([^/?#]+)\.(?:php|html)(?=([?#]|$))~i', '/$1', $url) ?? $url;
+    $url = preg_replace('~/website/(?=[^?#])~i', '/', $url) ?? $url;
+    $url = preg_replace('~/listing(?=([?#]|$))~i', '/properties', $url) ?? $url;
 
     return $url;
 }
@@ -35,7 +37,7 @@ function publicAuthLoginUrl(?string $redirectTo = null): string
 {
     $target = $redirectTo ?: publicAuthCurrentUrl();
 
-    return APP_URL . '/website/login?redirect=' . rawurlencode(publicAuthCleanWebsiteUrl($target));
+    return APP_URL . '/login?redirect=' . rawurlencode(publicAuthCleanWebsiteUrl($target));
 }
 
 function publicAuthNormalizeRedirect(string $redirectTo): string
@@ -43,7 +45,7 @@ function publicAuthNormalizeRedirect(string $redirectTo): string
     $redirectTo = trim($redirectTo);
 
     if ($redirectTo === '') {
-        return APP_URL . '/website/';
+        return APP_URL . '/';
     }
 
     if (str_starts_with($redirectTo, APP_URL)) {
@@ -55,7 +57,7 @@ function publicAuthNormalizeRedirect(string $redirectTo): string
     }
 
     if (preg_match('/^(?:[a-z][a-z0-9+.-]*:)?\\/\\//i', $redirectTo)) {
-        return APP_URL . '/website/';
+        return APP_URL . '/';
     }
 
     return publicAuthCleanWebsiteUrl($redirectTo);
@@ -388,7 +390,7 @@ function publicAuthVerifyEmailOtp(int $userId, string $otp): bool
 
 function publicAuthRedirectAfterLogin(): void
 {
-    $redirectTo = $_SESSION['auth_redirect_to'] ?? APP_URL . '/website/';
+    $redirectTo = $_SESSION['auth_redirect_to'] ?? APP_URL . '/';
     unset($_SESSION['auth_redirect_to']);
     redirect(publicAuthCleanWebsiteUrl((string) $redirectTo));
 }

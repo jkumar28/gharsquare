@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/layout.php';
 
+if (!preg_match('~/properties/?$~', (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH))) {
+    header('Location: ' . siteListingUrl($_GET), true, 301);
+    exit;
+}
+
 $allowedTypes = ['buy', 'rent', 'commercial', 'pg', 'plots'];
 $type = strtolower(trim((string) ($_GET['type'] ?? '')));
 $type = in_array($type, $allowedTypes, true) ? $type : '';

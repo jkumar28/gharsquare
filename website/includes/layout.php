@@ -9,8 +9,9 @@ function websiteAssetUrl(string $path): string
 {
     $file = BASE_PATH . '/website/' . ltrim($path, '/');
     $version = is_file($file) ? (string) filemtime($file) : '';
+    $url = APP_URL . '/website/' . ltrim($path, '/');
 
-    return siteWebsiteUrl($path) . ($version !== '' ? '?v=' . rawurlencode($version) : '');
+    return $url . ($version !== '' ? '?v=' . rawurlencode($version) : '');
 }
 
 function websiteSelectedCity(array $cities): string
@@ -26,11 +27,27 @@ function websiteSelectedCity(array $cities): string
     return (string) ($cities[0]['name'] ?? '');
 }
 
+function websiteCanonicalUrl(string $url): string
+{
+    $url = strtok(trim($url), '?') ?: '/';
+
+    if (!str_starts_with($url, '/')) {
+        return $url;
+    }
+
+    $appPath = rtrim((string) parse_url(APP_URL, PHP_URL_PATH), '/');
+    $relativePath = $appPath !== '' && str_starts_with($url, $appPath)
+        ? substr($url, strlen($appPath))
+        : $url;
+
+    return APP_URL . ($relativePath !== '' ? $relativePath : '/');
+}
+
 function websiteHeader(string $title, string $description, string $bodyClass = '', array $options = []): void
 {
     $cities = $options['cities'] ?? siteHomepageCities(30);
     $selectedCity = (string) ($options['selected_city'] ?? websiteSelectedCity($cities));
-    $canonical = (string) ($options['canonical'] ?? publicAuthCurrentUrl());
+    $canonical = websiteCanonicalUrl((string) ($options['canonical'] ?? publicAuthCurrentUrl()));
     $image = trim((string) ($options['image'] ?? ''));
     ?>
 <!doctype html>
@@ -44,6 +61,11 @@ function websiteHeader(string $title, string $description, string $bodyClass = '
     <meta property="og:title" content="<?= e($title) ?>">
     <meta property="og:description" content="<?= e($description) ?>">
     <meta property="og:url" content="<?= e($canonical) ?>">
+    <meta property="og:type" content="<?= e((string) ($options['og_type'] ?? 'website')) ?>">
+    <meta property="og:site_name" content="<?= e(PUBLIC_SITE_NAME) ?>">
+    <meta name="twitter:card" content="<?= $image !== '' ? 'summary_large_image' : 'summary' ?>">
+    <meta name="twitter:title" content="<?= e($title) ?>">
+    <meta name="twitter:description" content="<?= e($description) ?>">
     <?php if ($image !== ''): ?>
         <meta property="og:image" content="<?= e($image) ?>">
     <?php endif; ?>

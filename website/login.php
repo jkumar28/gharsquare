@@ -137,7 +137,7 @@ $currentUser = publicUser();
     <meta name="description" content="Login or register on GharSquare with email OTP verification.">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="assets/css/style.css" rel="stylesheet">
+    <link href="<?= e(APP_URL) ?>/website/assets/css/style.css?v=<?= e((string) filemtime(__DIR__ . '/assets/css/style.css')) ?>" rel="stylesheet">
 </head>
 
 <body class="auth-page">
@@ -153,8 +153,8 @@ $currentUser = publicUser();
             <div class="collapse navbar-collapse" id="mainNav">
                 <ul class="navbar-nav mx-auto gap-lg-4">
                     <li><a class="nav-link" href="./">Home</a></li>
-                    <li><a class="nav-link" href="listing?type=buy">Buyers</a></li>
-                    <li><a class="nav-link" href="listing?type=rent">Tenants</a></li>
+                    <li><a class="nav-link" href="<?= e(APP_URL) ?>/properties?type=buy">Buyers</a></li>
+                    <li><a class="nav-link" href="<?= e(APP_URL) ?>/properties?type=rent">Tenants</a></li>
                     <li><a class="nav-link" href="./#owner-cta">Owners</a></li>
                 </ul>
                 <a href="post-property" class="post-btn">Post Property <small>Free</small></a>

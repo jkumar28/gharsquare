@@ -1,0 +1,18 @@
+DirectoryIndex index.php
+Options -MultiViews
+
+RewriteEngine On
+
+# Application internals are never public.
+RewriteRule ^(?:config|database|includes|storage|tests|vendor)(?:/|$) - [F,L,NC]
+
+# Search-engine-facing page routes.
+RewriteRule ^properties/?$ website/listing.php [L,QSA]
+RewriteRule ^property/([^/]+)/?$ website/property-details.php?slug=$1 [L,QSA,B]
+RewriteRule ^sitemap\.xml$ website/sitemap.php [L]
+RewriteRule ^robots\.txt$ website/robots.php [L]
+
+# Public pages and application endpoints remain extensionless.
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^([a-z0-9-]+)/?$ website/$1.php [L,QSA,NC]

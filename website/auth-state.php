@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/public_auth.php';
+require_once BASE_PATH . '/includes/public_site.php';
 
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 
@@ -23,7 +24,7 @@ $links = array_merge($links, [
     ['label' => 'Saved Properties', 'href' => 'account?view=saved'],
     ['label' => 'My Enquiries', 'href' => 'account?view=enquiries'],
     ['label' => 'My Activity', 'href' => 'account?view=activity'],
-    ['label' => 'Browse Listings', 'href' => 'listing?type=buy'],
+    ['label' => 'Browse Listings', 'href' => siteListingUrl(['type' => 'buy'])],
     ['label' => 'Post Property', 'href' => 'post-property'],
 ]);
 

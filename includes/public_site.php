@@ -8,12 +8,22 @@ const PUBLIC_SITE_NAME = 'GharSquare';
 
 function siteWebsiteUrl(string $path = ''): string
 {
-    return APP_URL . '/website' . ($path !== '' ? '/' . ltrim($path, '/') : '');
+    $path = ltrim(trim($path), '/');
+
+    if ($path === '') {
+        return APP_URL . '/';
+    }
+
+    [$route, $query] = array_pad(explode('?', $path, 2), 2, '');
+    $route = ['index' => '', 'listing' => 'properties'][$route] ?? $route;
+    $url = APP_URL . ($route !== '' ? '/' . $route : '/');
+
+    return $query !== '' ? $url . '?' . $query : $url;
 }
 
 function sitePropertyUrl(array $property): string
 {
-    return siteWebsiteUrl('property-details?slug=' . rawurlencode((string) ($property['slug'] ?? '')));
+    return APP_URL . '/property/' . rawurlencode(trim((string) ($property['slug'] ?? '')));
 }
 
 function siteListingUrl(array $query = []): string

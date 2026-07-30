@@ -154,7 +154,7 @@ function notifyPropertyEnquiry(int $enquiryId): array
         return ['status' => 'failed', 'error' => 'Enquiry record not found.'];
     }
 
-    $detailsUrl = siteWebsiteUrl('property-details?slug=');
+    $detailsUrl = APP_URL . '/property/';
     $propertyStmt = db()->prepare('SELECT slug FROM properties WHERE id = :id LIMIT 1');
     $propertyStmt->execute([':id' => (int) ($enquiry['property_id'] ?? 0)]);
     $slug = (string) $propertyStmt->fetchColumn();
