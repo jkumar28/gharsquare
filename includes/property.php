@@ -1523,17 +1523,28 @@ function validatePropertyLocationInput(array $input): array
     ];
     $errors = [];
 
-    if ($data['country_id'] <= 0 || !findCountry($data['country_id'])) {
+    $country = $data['country_id'] > 0 ? findCountry($data['country_id']) : null;
+    $state = $data['state_id'] > 0 ? findState($data['state_id']) : null;
+    $city = $data['city_id'] > 0 ? findCity($data['city_id']) : null;
+    $locality = $data['locality_id'] > 0 ? findLocality($data['locality_id']) : null;
+
+    if (!$country) {
         $errors[] = 'Please select a valid country.';
     }
-    if ($data['state_id'] <= 0 || !findState($data['state_id'])) {
+    if (!$state) {
         $errors[] = 'Please select a valid state.';
+    } elseif ($country && (int) $state['country_id'] !== $data['country_id']) {
+        $errors[] = 'The selected state does not belong to the selected country.';
     }
-    if ($data['city_id'] <= 0 || !findCity($data['city_id'])) {
+    if (!$city) {
         $errors[] = 'Please select a valid city.';
+    } elseif ($state && (int) $city['state_id'] !== $data['state_id']) {
+        $errors[] = 'The selected city does not belong to the selected state.';
     }
-    if ($data['locality_id'] <= 0 || !findLocality($data['locality_id'])) {
+    if (!$locality) {
         $errors[] = 'Please select a valid locality.';
+    } elseif ($city && (int) $locality['city_id'] !== $data['city_id']) {
+        $errors[] = 'The selected locality does not belong to the selected city.';
     }
     if ($data['pincode'] !== '' && !preg_match('/^[0-9]{4,10}$/', $data['pincode'])) {
         $errors[] = 'Please enter a valid pincode.';
