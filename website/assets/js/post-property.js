@@ -1488,6 +1488,239 @@
         })));
     }
 
+    const mediaUploadQueues = new WeakMap();
+
+    function formatFileSize(bytes) {
+        const size = Number(bytes || 0);
+        if (size < 1024 * 1024) return `${Math.max(1, Math.round(size / 1024))} KB`;
+        return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function loadOrientedImage(file) {
+        const loadWithImageElement = () => new Promise((resolve, reject) => {
+            const image = new Image();
+            const url = URL.createObjectURL(file);
+            image.onload = () => {
+                URL.revokeObjectURL(url);
+                resolve(image);
+            };
+            image.onerror = () => {
+                URL.revokeObjectURL(url);
+                reject(new Error(`Unable to read ${file.name}.`));
+            };
+            image.src = url;
+        });
+
+        if (typeof createImageBitmap === "function") {
+            return createImageBitmap(file, { imageOrientation: "from-image" }).catch(loadWithImageElement);
+        }
+
+        return loadWithImageElement();
+    }
+
+    function canvasBlob(canvas, type, quality) {
+        return new Promise((resolve, reject) => {
+            canvas.toBlob(blob => {
+                if (blob) resolve(blob);
+                else reject(new Error("Unable to prepare this image."));
+            }, type, quality);
+        });
+    }
+
+    async function prepareImageForUpload(item) {
+        const image = await loadOrientedImage(item.file);
+        const originalWidth = image.width || image.naturalWidth || 0;
+        const originalHeight = image.height || image.naturalHeight || 0;
+        if (!originalWidth || !originalHeight || originalWidth * originalHeight > 40000000) {
+            image.close?.();
+            throw new Error(`${item.file.name} has invalid or oversized dimensions.`);
+        }
+
+        const maxSide = 2400;
+        const scale = Math.min(1, maxSide / Math.max(originalWidth, originalHeight));
+        const width = Math.max(1, Math.round(originalWidth * scale));
+        const height = Math.max(1, Math.round(originalHeight * scale));
+        const quarterTurn = Math.abs(item.rotation % 180) === 90;
+        const canvas = document.createElement("canvas");
+        canvas.width = quarterTurn ? height : width;
+        canvas.height = quarterTurn ? width : height;
+        const context = canvas.getContext("2d", { alpha: false });
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.translate(canvas.width / 2, canvas.height / 2);
+        context.rotate(item.rotation * Math.PI / 180);
+        context.drawImage(image, -width / 2, -height / 2, width, height);
+        image.close?.();
+
+        const blob = await canvasBlob(canvas, "image/webp", 0.9);
+        const baseName = item.file.name.replace(/\.[^.]+$/, "").replace(/[^a-z0-9_-]+/gi, "-") || "property-image";
+        return new File([blob], `${baseName}.webp`, { type: "image/webp", lastModified: Date.now() });
+    }
+
+    function queueFor(form) {
+        if (!mediaUploadQueues.has(form)) {
+            mediaUploadQueues.set(form, { items: [], uploading: false });
+        }
+        return mediaUploadQueues.get(form);
+    }
+
+    function mediaQueueItemHtml(item) {
+        const isImage = item.kind === "image";
+        const locked = ["uploading", "processing", "complete"].includes(item.status);
+        const stateClass = item.status === "failed" ? " is-failed" : (item.status === "complete" ? " is-complete" : "");
+        const preview = isImage
+            ? `<img src="${escapeHtml(item.previewUrl)}" alt="Preview of ${escapeHtml(item.file.name)}" style="transform:rotate(${item.rotation}deg)">`
+            : `<video src="${escapeHtml(item.previewUrl)}" muted preload="metadata"></video>`;
+        return `
+            <article class="post-media-queue-item${stateClass}" data-media-queue-id="${escapeHtml(item.id)}">
+                <div class="post-media-queue-preview">${preview}</div>
+                <div class="post-media-queue-info">
+                    <strong title="${escapeHtml(item.file.name)}">${escapeHtml(item.file.name)}</strong>
+                    <small data-media-item-status>${escapeHtml(item.message)}</small>
+                    <div class="post-media-item-track"><span data-media-item-bar style="width:${item.progress}%"></span></div>
+                </div>
+                <div class="post-media-queue-actions">
+                    <button type="button" data-media-rotate="-90" title="Rotate left" aria-label="Rotate image left"${isImage ? "" : " hidden"}${locked ? " disabled" : ""}><i class="bi bi-arrow-counterclockwise"></i></button>
+                    <button type="button" data-media-rotate="90" title="Rotate right" aria-label="Rotate image right"${isImage ? "" : " hidden"}${locked ? " disabled" : ""}><i class="bi bi-arrow-clockwise"></i></button>
+                    <button type="button" data-media-retry title="Retry upload" aria-label="Retry upload"${item.status === "failed" ? "" : " hidden"}><i class="bi bi-arrow-repeat"></i></button>
+                    <button class="danger" type="button" data-media-queue-remove title="Remove from queue" aria-label="Remove from queue"${locked ? " disabled" : ""}><i class="bi bi-x-lg"></i></button>
+                </div>
+            </article>`;
+    }
+
+    function refreshMediaQueue(form) {
+        const queue = queueFor(form);
+        const container = form.querySelector("[data-media-file-queue]");
+        const startButton = form.querySelector("[data-media-queue-start]");
+        if (!container || !startButton) return;
+        container.innerHTML = queue.items.map(mediaQueueItemHtml).join("");
+        startButton.hidden = queue.uploading || !queue.items.some(item => item.status === "pending");
+    }
+
+    function updateMediaQueueItem(form, item) {
+        const element = form.querySelector(`[data-media-queue-id="${CSS.escape(item.id)}"]`);
+        if (!element) return;
+        element.classList.toggle("is-failed", item.status === "failed");
+        element.classList.toggle("is-complete", item.status === "complete");
+        element.querySelector("[data-media-item-status]").textContent = item.message;
+        element.querySelector("[data-media-item-bar]").style.width = `${item.progress}%`;
+        const preview = element.querySelector("img");
+        if (preview) preview.style.transform = `rotate(${item.rotation}deg)`;
+        element.querySelector("[data-media-retry]").hidden = item.status !== "failed";
+        element.querySelectorAll("[data-media-rotate], [data-media-queue-remove]").forEach(button => {
+            button.disabled = item.status === "uploading" || item.status === "processing" || item.status === "complete";
+        });
+    }
+
+    function validateQueuedFile(file, kind) {
+        const imageTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+        const videoTypes = ["video/mp4", "video/webm", "video/quicktime"];
+        if (kind === "image" && (!imageTypes.includes(file.type) || file.size > 10 * 1024 * 1024)) {
+            return "Use a valid JPG, PNG, GIF or WebP image up to 10 MB.";
+        }
+        if (kind === "video" && (!videoTypes.includes(file.type) || file.size > 20 * 1024 * 1024)) {
+            return "Use a valid MP4, WebM or MOV video up to 20 MB.";
+        }
+        return "";
+    }
+
+    function addFilesToMediaQueue(form, files) {
+        const queue = queueFor(form);
+        const kind = form.dataset.uploadKind || "";
+        Array.from(files || []).forEach(file => {
+            const queuedImages = queue.items.filter(item => item.kind === "image" && ["pending", "uploading", "processing"].includes(item.status)).length;
+            const limitError = kind === "image" && uploadedImageCount() + queuedImages >= 20
+                ? "Maximum 20 images are allowed per listing."
+                : "";
+            const validationError = limitError || validateQueuedFile(file, kind);
+            queue.items.push({
+                id: `media-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                file,
+                kind,
+                previewUrl: URL.createObjectURL(file),
+                rotation: 0,
+                progress: validationError ? 100 : 0,
+                status: validationError ? "failed" : "pending",
+                message: validationError || `${formatFileSize(file.size)} • ${kind === "image" ? "Orientation will be checked • ready" : "Ready to upload"}`
+            });
+        });
+        refreshMediaQueue(form);
+    }
+
+    function singleMediaFormData(form, file, kind) {
+        const data = new FormData();
+        form.querySelectorAll('input[type="hidden"]').forEach(input => data.set(input.name, input.value));
+        data.append(kind === "image" ? "image_files[]" : "video_files[]", file, file.name);
+        return data;
+    }
+
+    async function uploadMediaQueueItem(form, item) {
+        item.status = "uploading";
+        item.progress = 0;
+        item.message = item.kind === "image" ? "Correcting orientation…" : "Checking video…";
+        updateMediaQueueItem(form, item);
+
+        let uploadFile = item.file;
+        if (item.kind === "image") {
+            uploadFile = await prepareImageForUpload(item);
+        } else {
+            await validateVideoFiles([item.file]);
+        }
+
+        item.message = "Uploading… 0%";
+        updateMediaQueueItem(form, item);
+        const payload = await uploadMediaRequest(
+            config.media_url || "post-property-media",
+            singleMediaFormData(form, uploadFile, item.kind),
+            percent => {
+                item.progress = Math.max(0, Math.min(100, Math.round(percent)));
+                item.status = item.progress >= 100 ? "processing" : "uploading";
+                item.message = item.progress >= 100 ? "Processing securely…" : `Uploading… ${item.progress}%`;
+                updateMediaQueueItem(form, item);
+            }
+        );
+        if (payload.login_required && payload.login_url) {
+            window.location.href = payload.login_url;
+            return;
+        }
+        updateMediaFromPayload(payload);
+        item.status = "complete";
+        item.progress = 100;
+        item.message = "Uploaded successfully";
+        updateMediaQueueItem(form, item);
+    }
+
+    async function startMediaQueue(form) {
+        const queue = queueFor(form);
+        if (queue.uploading) return;
+        const pending = queue.items.filter(item => item.status === "pending");
+        if (!pending.length) return;
+
+        queue.uploading = true;
+        refreshMediaQueue(form);
+        setStatus("Uploading media…", "saving");
+        let completed = 0;
+        for (const item of pending) {
+            try {
+                await uploadMediaQueueItem(form, item);
+                completed++;
+            } catch (error) {
+                item.status = "failed";
+                item.progress = 100;
+                item.message = error.message || "Upload failed. Retry this file.";
+                updateMediaQueueItem(form, item);
+            }
+        }
+        queue.uploading = false;
+        refreshMediaQueue(form);
+        setStatus(completed ? "Media saved" : "Media failed", completed ? "saved" : "error");
+        showNotice({
+            icon: completed === pending.length ? "success" : (completed ? "warning" : "error"),
+            title: completed === pending.length ? "Upload complete" : "Upload queue finished",
+            text: `${completed} of ${pending.length} file${pending.length === 1 ? "" : "s"} uploaded successfully.`
+        });
+    }
+
     function setMediaUploadState(form, active, percent = 0, message = "Uploading...") {
         let indicator = form.querySelector("[data-media-upload-progress]");
 
@@ -1850,18 +2083,61 @@
     });
 
     document.querySelectorAll(".post-media-upload-form").forEach(form => {
+        const uploadKind = form.dataset.uploadKind || "";
+        const usesFileQueue = uploadKind === "image" || uploadKind === "video";
+
         form.addEventListener("submit", event => {
             event.preventDefault();
-            handleMediaForm(form).catch(() => {});
+            if (usesFileQueue) {
+                startMediaQueue(form).catch(() => {});
+            } else {
+                handleMediaForm(form).catch(() => {});
+            }
         });
 
         form.querySelectorAll('input[type="file"]').forEach(input => {
             input.addEventListener("change", () => {
                 if (input.files && input.files.length > 0) {
-                    handleMediaForm(form).catch(() => {});
+                    addFilesToMediaQueue(form, input.files);
+                    input.value = "";
                 }
             });
         });
+
+        if (usesFileQueue) {
+            form.addEventListener("click", event => {
+                const queueItem = event.target.closest("[data-media-queue-id]");
+                if (!queueItem) return;
+                const queue = queueFor(form);
+                const item = queue.items.find(entry => entry.id === queueItem.dataset.mediaQueueId);
+                if (!item) return;
+
+                const rotateButton = event.target.closest("[data-media-rotate]");
+                const removeButton = event.target.closest("[data-media-queue-remove]");
+                const retryButton = event.target.closest("[data-media-retry]");
+
+                if (rotateButton && ["pending", "failed"].includes(item.status)) {
+                    item.rotation = (item.rotation + Number(rotateButton.dataset.mediaRotate || 0) + 360) % 360;
+                    item.status = "pending";
+                    item.progress = 0;
+                    item.message = `${formatFileSize(item.file.size)} • Rotation ${item.rotation || 0}° • ready`;
+                    updateMediaQueueItem(form, item);
+                    refreshMediaQueue(form);
+                }
+                if (removeButton && !["uploading", "processing", "complete"].includes(item.status)) {
+                    URL.revokeObjectURL(item.previewUrl);
+                    queue.items = queue.items.filter(entry => entry.id !== item.id);
+                    refreshMediaQueue(form);
+                }
+                if (retryButton && item.status === "failed") {
+                    item.status = "pending";
+                    item.progress = 0;
+                    item.message = "Ready to retry";
+                    refreshMediaQueue(form);
+                    startMediaQueue(form).catch(() => {});
+                }
+            });
+        }
     });
 
     document.querySelectorAll(".post-media-dropzone").forEach(dropzone => {
@@ -1881,10 +2157,7 @@
             const input = dropzone.querySelector('input[type="file"]');
             const form = dropzone.closest("form");
             if (!input || !form || !event.dataTransfer?.files?.length) return;
-            const transfer = new DataTransfer();
-            Array.from(event.dataTransfer.files).forEach(file => transfer.items.add(file));
-            input.files = transfer.files;
-            handleMediaForm(form).catch(() => {});
+            addFilesToMediaQueue(form, event.dataTransfer.files);
         });
     });
 

@@ -2047,6 +2047,21 @@ function optimizeImageToWebp(array $file, int $draftId): string
         throw new RuntimeException('Unsupported image format.');
     }
 
+    if ($imageType === IMAGETYPE_JPEG && function_exists('exif_read_data')) {
+        $exif = @exif_read_data($file['tmp_name']);
+        $orientation = (int) ($exif['Orientation'] ?? 1);
+        $rotated = match ($orientation) {
+            3 => imagerotate($source, 180, 0),
+            6 => imagerotate($source, -90, 0),
+            8 => imagerotate($source, 90, 0),
+            default => false,
+        };
+        if ($rotated !== false) {
+            imagedestroy($source);
+            $source = $rotated;
+        }
+    }
+
     $width = max(1, imagesx($source));
     $height = max(1, imagesy($source));
     $targetWidth = 1600;

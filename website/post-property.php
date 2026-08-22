@@ -814,6 +814,8 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
                                 <strong>Upload Images</strong>
                                 <small>JPG, PNG, GIF, WEBP up to 10 MB. Automatic 4:3 crop and compression.</small>
                             </label>
+                            <div class="post-media-file-queue" data-media-file-queue aria-live="polite"></div>
+                            <button class="post-media-queue-start" type="submit" data-media-queue-start hidden>Upload selected images</button>
                         </form>
                         <form class="post-media-upload-form" method="post" action="post-property-media" enctype="multipart/form-data" data-upload-kind="video">
                             <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
@@ -825,6 +827,8 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
                                 <strong>Upload Videos</strong>
                                 <small>20 MB each and 1 minute maximum.</small>
                             </label>
+                            <div class="post-media-file-queue" data-media-file-queue aria-live="polite"></div>
+                            <button class="post-media-queue-start" type="submit" data-media-queue-start hidden>Upload selected videos</button>
                         </form>
                     </div>
                     <form class="post-media-upload-form post-youtube-form" method="post" action="post-property-media" data-upload-kind="youtube">
