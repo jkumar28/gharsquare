@@ -2193,6 +2193,24 @@ footer a {
     gap: 4px;
 }
 
+.post-price-label-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.post-price-label-row > label:first-child {
+    margin-bottom: 0;
+}
+
+.post-price-negotiable {
+    flex: 0 0 auto;
+    margin: 0;
+    font-size: 13px;
+}
+
 .post-price-summary strong {
     color: var(--purple);
     font-size: 18px;

@@ -374,7 +374,16 @@ require BASE_PATH . '/admin/includes/header.php';
                     <div class="form-field"><label class="<?= $selectedCategory !== 'land' ? 'required-label ' : '' ?>" data-land-optional-label="bathrooms">Bathrooms</label><input class="form-control" name="bathrooms" type="number" min="0" step="1" value="<?= e((string) ($bundle['profile']['bathrooms'] ?? '')) ?>"></div>
                     <div class="form-field"><label>Balconies</label><input class="form-control" name="balconies" type="number" min="0" step="1" value="<?= e((string) ($bundle['profile']['balconies'] ?? '')) ?>"></div>
                     <div class="form-field"><label class="">Parking Count</label><input class="form-control" name="parking_count" type="number" min="0" value="<?= e((string) ($bundle['profile']['parking_count'] ?? '')) ?>"></div>
-                    <div class="form-field"><label class="">Floor No</label><input class="form-control" name="floor_no" type="number" min="0" step="1" value="<?= e((string) ($bundle['profile']['floor_no'] ?? '')) ?>"></div>
+                    <div class="form-field">
+                        <label class="">Floor No</label>
+                        <select class="form-select" name="floor_no">
+                            <option value="">Select floor</option>
+                            <option value="0" <?= selectedAttr($bundle['profile']['floor_no'] ?? '', '0') ?>>Ground Floor</option>
+                            <?php for ($floorNumber = 1; $floorNumber <= 100; $floorNumber++): ?>
+                                <option value="<?= $floorNumber ?>" <?= selectedAttr($bundle['profile']['floor_no'] ?? '', (string) $floorNumber) ?>>Floor <?= $floorNumber ?></option>
+                            <?php endfor; ?>
+                        </select>
+                    </div>
                     <div class="form-field"><label class="">Total Floors</label><input class="form-control" name="total_floor" type="number" min="0" step="1" value="<?= e((string) ($bundle['profile']['total_floor'] ?? '')) ?>"></div>
                     <div class="form-field">
                         <label class="<?= $selectedCategory !== 'land' ? 'required-label ' : '' ?>" data-land-optional-label="furnishing">Furnishing</label>

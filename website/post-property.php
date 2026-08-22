@@ -537,7 +537,16 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
                             </section>
                             <div class="post-field" data-profile-field data-visible-for="residential commercial" data-office-hide-field data-pg-hide-field><label for="parking_count">Parking</label><input id="parking_count" name="parking_count" type="number" min="0" step="1" value="<?= e((string) ($profile['parking_count'] ?? '')) ?>"></div>
                             <div class="post-field" data-profile-field data-visible-for="residential commercial"><label for="total_floor">Total Floors</label><input id="total_floor" name="total_floor" type="number" min="0" step="1" value="<?= e((string) ($profile['total_floor'] ?? '')) ?>"></div>
-                            <div class="post-field" data-profile-field data-visible-for="residential commercial"><label for="floor_no">Floor No</label><input id="floor_no" name="floor_no" type="number" min="0" step="1" value="<?= e((string) ($profile['floor_no'] ?? '')) ?>"></div>
+                            <div class="post-field" data-profile-field data-visible-for="residential commercial">
+                                <label for="floor_no">Floor No</label>
+                                <select id="floor_no" name="floor_no">
+                                    <option value="">Select floor</option>
+                                    <option value="0"<?= selectedAttr($profile['floor_no'] ?? '', '0') ?>>Ground Floor</option>
+                                    <?php for ($floorNumber = 1; $floorNumber <= 100; $floorNumber++): ?>
+                                        <option value="<?= $floorNumber ?>"<?= selectedAttr($profile['floor_no'] ?? '', (string) $floorNumber) ?>>Floor <?= $floorNumber ?></option>
+                                    <?php endfor; ?>
+                                </select>
+                            </div>
                             <section class="post-office-profile span-2" data-profile-field data-visible-for="commercial" data-office-profile hidden>
                                 <input type="hidden" name="office_profile_present" value="1">
                                 <div class="post-furnishing-head">
@@ -665,15 +674,27 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
                         <div class="post-panel-title"><span>Step 4</span><h2>Pricing</h2></div>
                         <p class="post-context-note" data-pricing-context>Pricing fields adjust from listing type and property category.</p>
                         <div class="post-form-grid">
-                            <div class="post-field" data-pricing-field data-pricing-mode="sell"><label for="expected_price">Expected Price</label><input id="expected_price" class="js-price-input" name="expected_price" type="number" min="0" step="0.01" value="<?= e((string) ($pricing['expected_price'] ?? '')) ?>"></div>
-                            <div class="post-field" data-pricing-field data-pricing-mode="rent"><label for="rent">Monthly Rent</label><input id="rent" class="js-price-input" name="rent" type="number" min="0" step="0.01" value="<?= e((string) ($pricing['rent'] ?? '')) ?>"></div>
-                            <div class="post-field" data-pricing-field data-pricing-mode="sell"><label for="booking_amount">Booking Amount</label><input id="booking_amount" class="js-price-input" name="booking_amount" type="number" min="0" step="0.01" value="<?= e((string) ($pricing['booking_amount'] ?? '')) ?>"></div>
-                            <div class="post-field" data-pricing-field data-pricing-mode="both"><label for="maintenance">Maintenance</label><input id="maintenance" class="js-price-input" name="maintenance" type="number" min="0" step="0.01" value="<?= e((string) ($pricing['maintenance'] ?? '')) ?>"></div>
-                            <div class="post-field" data-pricing-field data-pricing-mode="both"><label for="maintenance_period">Maintenance Period</label><select id="maintenance_period" name="maintenance_period"><option value="">Select</option><?php foreach ($maintenanceOptions as $value => $label): ?><option value="<?= e($value) ?>"<?= selectedAttr($pricing['maintenance_period'] ?? '', $value) ?>><?= e($label) ?></option><?php endforeach; ?></select></div>
+                            <div class="post-field span-2" data-pricing-field data-pricing-mode="sell">
+                                <div class="post-price-label-row">
+                                    <label for="expected_price">Expected Price</label>
+                                    <label class="post-check post-price-negotiable"><input type="checkbox" name="negotiable" value="1"<?= checkedAttr($pricing['negotiable'] ?? 0) ?>> Price negotiable</label>
+                                </div>
+                                <input id="expected_price" class="js-price-input" name="expected_price" type="number" min="0" step="0.01" value="<?= e((string) ($pricing['expected_price'] ?? '')) ?>">
+                            </div>
+                            <div class="post-field span-2" data-pricing-field data-pricing-mode="rent">
+                                <div class="post-price-label-row">
+                                    <label for="rent">Monthly Rent</label>
+                                    <label class="post-check post-price-negotiable"><input type="checkbox" name="negotiable" value="1"<?= checkedAttr($pricing['negotiable'] ?? 0) ?>> Price negotiable</label>
+                                </div>
+                                <input id="rent" class="js-price-input" name="rent" type="number" min="0" step="0.01" value="<?= e((string) ($pricing['rent'] ?? '')) ?>">
+                            </div>
                             <div class="post-price-summary span-2" data-price-summary>
                                 <strong data-price-words-main>Enter amount to see price in words.</strong>
                                 <span data-price-unit>Price per unit will appear after area and amount are entered.</span>
                             </div>
+                            <div class="post-field" data-pricing-field data-pricing-mode="sell"><label for="booking_amount">Booking Amount</label><input id="booking_amount" class="js-price-input" name="booking_amount" type="number" min="0" step="0.01" value="<?= e((string) ($pricing['booking_amount'] ?? '')) ?>"></div>
+                            <div class="post-field" data-pricing-field data-pricing-mode="both"><label for="maintenance">Maintenance</label><input id="maintenance" class="js-price-input" name="maintenance" type="number" min="0" step="0.01" value="<?= e((string) ($pricing['maintenance'] ?? '')) ?>"></div>
+                            <div class="post-field" data-pricing-field data-pricing-mode="both"><label for="maintenance_period">Maintenance Period</label><select id="maintenance_period" name="maintenance_period"><option value="">Select</option><?php foreach ($maintenanceOptions as $value => $label): ?><option value="<?= e($value) ?>"<?= selectedAttr($pricing['maintenance_period'] ?? '', $value) ?>><?= e($label) ?></option><?php endforeach; ?></select></div>
 
                             <section class="post-pricing-group span-2" data-pricing-field data-pricing-mode="rent">
                                 <div class="post-pricing-group-head">
@@ -752,7 +773,6 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
                                 </div>
                             </section>
 
-                            <label class="post-check span-2" data-pricing-field data-pricing-mode="both"><input type="checkbox" name="negotiable" value="1"<?= checkedAttr($pricing['negotiable'] ?? 0) ?>> Price negotiable</label>
                         </div>
                         <div class="post-actions"><button type="button" data-prev-step="profile">Back</button><button type="submit">Save Draft</button><button type="button" data-next-step="amenities">Next</button></div>
                     </form>
