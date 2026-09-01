@@ -141,7 +141,6 @@ require BASE_PATH . '/admin/includes/header.php';
                     <p class="eyebrow mb-1">Step 1</p>
                     <h3>Basic Details</h3>
                 </div>
-                <span class="wizard-step-badge" data-step-badge="basic"><?= e((string) $stepMeta['basic']['percent']) ?>%</span>
             </div>
 
             <form class="admin-form property-step-form" method="post" action="<?= ADMIN_URL ?>/properties/save-step.php" data-custom-handler="property-step">
@@ -285,7 +284,6 @@ require BASE_PATH . '/admin/includes/header.php';
         <section class="panel-card wizard-panel" data-step-panel="location">
             <div class="panel-head">
                 <div><p class="eyebrow mb-1">Step 2</p><h3>Location</h3></div>
-                <span class="wizard-step-badge" data-step-badge="location"><?= e((string) $stepMeta['location']['percent']) ?>%</span>
             </div>
             <form class="admin-form property-step-form" method="post" action="<?= ADMIN_URL ?>/properties/save-step.php" data-custom-handler="property-step">
                 <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
@@ -387,7 +385,6 @@ require BASE_PATH . '/admin/includes/header.php';
         <section class="panel-card wizard-panel" data-step-panel="profile">
             <div class="panel-head">
                 <div><p class="eyebrow mb-1">Step 3</p><h3>Property Profile</h3></div>
-                <span class="wizard-step-badge" data-step-badge="profile"><?= e((string) $stepMeta['profile']['percent']) ?>%</span>
             </div>
             <form class="admin-form property-step-form" method="post" action="<?= ADMIN_URL ?>/properties/save-step.php" data-custom-handler="property-step">
                 <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
@@ -532,7 +529,6 @@ require BASE_PATH . '/admin/includes/header.php';
         <section class="panel-card wizard-panel" data-step-panel="pricing">
             <div class="panel-head">
                 <div><p class="eyebrow mb-1">Step 4</p><h3>Pricing</h3></div>
-                <span class="wizard-step-badge" data-step-badge="pricing"><?= e((string) $stepMeta['pricing']['percent']) ?>%</span>
             </div>
             <form class="admin-form property-step-form" method="post" action="<?= ADMIN_URL ?>/properties/save-step.php" data-custom-handler="property-step">
                 <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
@@ -601,7 +597,6 @@ require BASE_PATH . '/admin/includes/header.php';
         <section class="panel-card wizard-panel" data-step-panel="amenities">
             <div class="panel-head">
                 <div><p class="eyebrow mb-1">Step 5</p><h3>Amenities</h3></div>
-                <span class="wizard-step-badge" data-step-badge="amenities"><?= e((string) $stepMeta['amenities']['percent']) ?>%</span>
             </div>
             <form class="admin-form property-step-form" method="post" action="<?= ADMIN_URL ?>/properties/save-step.php" data-custom-handler="property-step">
                 <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
@@ -644,7 +639,6 @@ require BASE_PATH . '/admin/includes/header.php';
                     <h3>Media</h3>
                       <p class="panel-copy mb-0">Minimum 1 image, maximum 20 images. Images auto-upload on select or drag-drop. Videos allow up to 20 MB and 30 seconds.</p>
                 </div>
-                <span class="wizard-step-badge" data-step-badge="media"><?= e((string) $stepMeta['media']['percent']) ?>%</span>
             </div>
 
               <div class="wizard-media-stats">

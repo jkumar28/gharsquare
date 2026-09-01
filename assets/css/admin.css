@@ -2076,7 +2076,7 @@ a {
 }
 
 #property-wizard .wizard-content {
-    gap: 20px;
+    gap: 11px;
 }
 
 #property-wizard .wizard-head-card,
@@ -2098,9 +2098,17 @@ a {
 }
 
 #property-wizard .wizard-panel:not(.is-active) {
-    padding-top: 15px;
-    padding-bottom: 15px;
-    box-shadow: 0 5px 16px rgba(15, 38, 72, .04);
+    padding: 0 18px;
+    border-color: #e3e9ef;
+    border-radius: 14px;
+    box-shadow: 0 4px 13px rgba(15, 38, 72, .035);
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+#property-wizard .wizard-panel:not(.is-active):hover {
+    border-color: #c9dfdc;
+    box-shadow: 0 8px 22px rgba(15, 38, 72, .07);
+    transform: translateY(-1px);
 }
 
 #property-wizard .wizard-panel:not(.is-active) > :not(.panel-head) {
@@ -2133,9 +2141,30 @@ a {
 }
 
 #property-wizard .wizard-panel:not(.is-active) > .panel-head {
+    min-height: 68px;
     margin-bottom: 0;
     padding-bottom: 0;
     border-bottom: 0;
+    align-items: center;
+}
+
+#property-wizard .wizard-panel:not(.is-active) > .panel-head .eyebrow {
+    margin-bottom: 2px !important;
+    color: #10847c;
+    font-size: .68rem;
+    letter-spacing: .13em;
+}
+
+#property-wizard .wizard-panel:not(.is-active) > .panel-head h3 {
+    font-size: 1.08rem;
+    line-height: 1.2;
+}
+
+#property-wizard .wizard-panel:not(.is-active) > .panel-head::after {
+    width: 30px;
+    height: 30px;
+    background: #f3f7f7;
+    font-size: .82rem;
 }
 
 #property-wizard .wizard-step-link.is-active {
