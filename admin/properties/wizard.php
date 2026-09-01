@@ -401,9 +401,9 @@ require BASE_PATH . '/admin/includes/header.php';
                         <label class="">Floor No</label>
                         <select class="form-select" name="floor_no">
                             <option value="">Select floor</option>
-                            <option value="0" <?= selectedAttr($bundle['profile']['floor_no'] ?? '', '0') ?>>Ground Floor</option>
+                            <option value="0" <?= (string) ($bundle['profile']['floor_no'] ?? '') === '0' ? 'selected' : '' ?>>Ground Floor</option>
                             <?php for ($floorNumber = 1; $floorNumber <= 100; $floorNumber++): ?>
-                                <option value="<?= $floorNumber ?>" <?= selectedAttr($bundle['profile']['floor_no'] ?? '', (string) $floorNumber) ?>>Floor <?= $floorNumber ?></option>
+                                <option value="<?= $floorNumber ?>" <?= (string) ($bundle['profile']['floor_no'] ?? '') === (string) $floorNumber ? 'selected' : '' ?>>Floor <?= $floorNumber ?></option>
                             <?php endfor; ?>
                         </select>
                     </div>
