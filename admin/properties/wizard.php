@@ -63,6 +63,22 @@ foreach ($listingTypes as $type) {
 }
 $selectedPropertyTypeName = (string) ($selectedPropertyType['name'] ?? 'Not selected');
 $selectedCategoryLabel = (string) ($categoryLabels[$selectedCategory] ?? 'Residential');
+$amenityGroupLabels = [
+    'amenities' => 'Amenities',
+    'property_features' => 'Property Features',
+    'society_building' => 'Society / Building Features',
+    'additional_features' => 'Additional Features',
+    'other_features' => 'Other Features',
+    'location_advantages' => 'Location Advantages',
+];
+$groupedAmenities = [];
+foreach ($amenities as $amenity) {
+    $groupKey = (string) ($amenity['category'] ?: 'amenities');
+    $groupedAmenities[$groupKey][] = $amenity;
+    if (!isset($amenityGroupLabels[$groupKey])) {
+        $amenityGroupLabels[$groupKey] = ucwords(str_replace(['_', '-'], ' ', $groupKey));
+    }
+}
 
 require BASE_PATH . '/admin/includes/header.php';
 ?>
@@ -533,12 +549,25 @@ require BASE_PATH . '/admin/includes/header.php';
                 <input type="hidden" name="draft_id" value="<?= e((string) $draftId) ?>">
                 <input type="hidden" name="step" value="amenities">
 
-                <div class="amenity-grid">
-                    <?php foreach ($amenities as $amenity): ?>
-                        <label class="amenity-option">
-                            <input type="checkbox" name="amenity_ids[]" value="<?= e((string) $amenity['id']) ?>" <?= in_array((int) $amenity['id'], $bundle['amenity_ids'], true) ? 'checked' : '' ?>>
-                            <span><?= e((string) $amenity['name']) ?></span>
-                        </label>
+                <p class="panel-copy admin-amenity-intro">Options are grouped and automatically filtered for the selected property category.</p>
+                <div class="admin-amenity-groups">
+                    <?php foreach ($amenityGroupLabels as $groupKey => $groupLabel): ?>
+                        <?php if (!empty($groupedAmenities[$groupKey])): ?>
+                            <section class="admin-amenity-group" data-admin-amenity-group>
+                                <div class="admin-amenity-group-head">
+                                    <h4><?= e($groupLabel) ?></h4>
+                                    <?php if ($groupKey === 'location_advantages'): ?><span>Nearby landmarks</span><?php endif; ?>
+                                </div>
+                                <div class="amenity-grid">
+                                    <?php foreach ($groupedAmenities[$groupKey] as $amenity): ?>
+                                        <label class="amenity-option" data-admin-amenity-categories="<?= e(str_replace(',', ' ', (string) ($amenity['applicable_categories'] ?? 'residential,commercial,land'))) ?>">
+                                            <input type="checkbox" name="amenity_ids[]" value="<?= e((string) $amenity['id']) ?>" <?= in_array((int) $amenity['id'], $bundle['amenity_ids'], true) ? 'checked' : '' ?>>
+                                            <span><i class="bi bi-plus-lg" aria-hidden="true"></i><?= e((string) $amenity['name']) ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </section>
+                        <?php endif; ?>
                     <?php endforeach; ?>
                 </div>
 

@@ -1021,6 +1021,8 @@
                 const categoryLabel = labels[nextCategory] || 'property';
                 typeCaption.textContent = 'Choose the closest ' + categoryLabel.toLowerCase() + ' type for this listing.';
             }
+
+            syncAdminAmenities(nextCategory);
         }
 
         listingButtons.forEach(function (button) {
@@ -1082,6 +1084,20 @@
         if (panel) {
             panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+    }
+
+    function syncAdminAmenities(category) {
+        const currentCategory = category || (byId('property_category') ? byId('property_category').value : '') || 'residential';
+        document.querySelectorAll('[data-admin-amenity-categories]').forEach(function (option) {
+            const categories = (option.dataset.adminAmenityCategories || '').split(/\s+/).filter(Boolean);
+            const visible = categories.length === 0 || categories.includes(currentCategory);
+            option.hidden = !visible;
+            const input = option.querySelector('input');
+            if (input) input.disabled = !visible;
+        });
+        document.querySelectorAll('[data-admin-amenity-group]').forEach(function (group) {
+            group.hidden = !group.querySelector('[data-admin-amenity-categories]:not([hidden])');
+        });
     }
 
     async function handleStepForm(form, options) {
