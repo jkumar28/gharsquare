@@ -679,6 +679,7 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
                         <div class="post-panel-title"><span>Step 4</span><h2>Pricing</h2></div>
                         <p class="post-context-note" data-pricing-context>Pricing fields adjust from listing type and property category.</p>
                         <div class="post-form-grid">
+                            <h3 class="post-price-details-title span-2">Price Details</h3>
                             <div class="post-price-primary span-2" data-price-summary>
                                 <div class="post-price-main-column">
                                     <div class="post-field" data-pricing-field data-pricing-mode="sell">
@@ -689,25 +690,42 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
                                         <label for="rent">Monthly Rent</label>
                                         <input id="rent" class="js-price-input" name="rent" type="number" min="0" step="0.01" value="<?= e((string) ($pricing['rent'] ?? '')) ?>">
                                     </div>
-                                    <label class="post-check post-price-negotiable"><input type="checkbox" name="negotiable" value="1"<?= checkedAttr($pricing['negotiable'] ?? 0) ?>> Price negotiable</label>
                                     <strong data-price-words-main>Enter amount to see price in words.</strong>
                                 </div>
                                 <div class="post-price-unit-card">
-                                    <small>Calculated price</small>
-                                    <span data-price-unit>Price per unit will appear after area and amount are entered.</span>
+                                    <small data-price-unit-label>₹ Price per unit</small>
+                                    <strong data-price-unit-value>—</strong>
+                                    <label class="post-price-basis-label">Based on
+                                        <select id="price_area_basis" name="price_area_basis" data-price-area-basis data-selected="<?= e((string) ($pricing['price_area_basis'] ?? '')) ?>">
+                                            <option value="">Select area</option>
+                                            <option value="plot_area">Plot Area</option>
+                                            <option value="builtup_area">Built-up Area</option>
+                                            <option value="carpet_area">Carpet Area</option>
+                                            <option value="super_builtup_area">Super Built-up Area</option>
+                                        </select>
+                                    </label>
                                 </div>
                             </div>
+                            <div class="post-price-top-checks span-2">
+                                <label><input type="checkbox" name="electricity_water_excluded" value="1" <?= checkedAttr($pricing['electricity_water_excluded'] ?? 0) ?>> Electricity &amp; Water charges excluded</label>
+                                <label><input type="checkbox" name="negotiable" value="1" <?= checkedAttr($pricing['negotiable'] ?? 0) ?>> Price Negotiable</label>
+                            </div>
+
+                            <details class="post-additional-pricing span-2">
+                                <summary><i class="bi bi-plus-lg" aria-hidden="true"></i><span>Add more pricing details</span></summary>
+                                <div class="post-additional-pricing-grid">
                             <div class="post-field" data-pricing-field data-pricing-mode="sell"><label for="booking_amount">Booking Amount</label><input id="booking_amount" class="js-price-input" name="booking_amount" type="number" min="0" step="0.01" value="<?= e((string) ($pricing['booking_amount'] ?? '')) ?>"></div>
                             <div class="post-field" data-pricing-field data-pricing-mode="both"><label for="maintenance">Maintenance</label><input id="maintenance" class="js-price-input" name="maintenance" type="number" min="0" step="0.01" value="<?= e((string) ($pricing['maintenance'] ?? '')) ?>"></div>
-                            <div class="post-field" data-pricing-field data-pricing-mode="both"><label for="maintenance_period">Maintenance Period</label><select id="maintenance_period" name="maintenance_period"><option value="">Select</option><?php foreach ($maintenanceOptions as $value => $label): ?><option value="<?= e($value) ?>"<?= selectedAttr($pricing['maintenance_period'] ?? '', $value) ?>><?= e($label) ?></option><?php endforeach; ?></select></div>
+                            <div class="post-field" data-pricing-field data-pricing-mode="both"><label for="maintenance_period">Maintenance Period</label><select id="maintenance_period" name="maintenance_period">
+                                    <option value="">Select</option><?php foreach ($maintenanceOptions as $value => $label): ?><option value="<?= e($value) ?>" <?= selectedAttr($pricing['maintenance_period'] ?? '', $value) ?>><?= e($label) ?></option><?php endforeach; ?>
+                                </select></div>
 
                             <section class="post-pricing-group span-2" data-pricing-field data-pricing-mode="rent">
                                 <div class="post-pricing-group-head">
                                     <h3>Included Charges</h3>
                                 </div>
                                 <div class="post-pricing-checks">
-                                    <label class="post-check"><input type="checkbox" name="dg_ups_included" value="1"<?= checkedAttr($pricing['dg_ups_included'] ?? 0) ?>> DG &amp; UPS price included</label>
-                                    <label class="post-check"><input type="checkbox" name="electricity_water_excluded" value="1"<?= checkedAttr($pricing['electricity_water_excluded'] ?? 0) ?>> Electricity &amp; water charges excluded</label>
+                                    <label class="post-check"><input type="checkbox" name="dg_ups_included" value="1" <?= checkedAttr($pricing['dg_ups_included'] ?? 0) ?>> DG &amp; UPS price included</label>
                                 </div>
                                 <div class="post-field">
                                     <label for="electricity_charges">Electricity Charge Details</label>
@@ -777,6 +795,9 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
                                     </div>
                                 </div>
                             </section>
+
+                                </div>
+                            </details>
 
                         </div>
                         <div class="post-actions"><button type="button" data-prev-step="profile">Back</button><button type="submit">Save Draft</button><button type="button" data-next-step="amenities">Next</button></div>

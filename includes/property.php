@@ -1872,6 +1872,7 @@ function validatePropertyPricingInput(array $input, array $basic): array
     $hasStructuredBrokerage = array_key_exists('brokerage_type', $input);
     $data = [
         'expected_price' => trim((string) ($input['expected_price'] ?? '')),
+        'price_area_basis' => trim((string) ($input['price_area_basis'] ?? '')),
         'rent' => trim((string) ($input['rent'] ?? '')),
         'deposit' => trim((string) ($input['deposit'] ?? '')),
         'security_deposit_type' => trim((string) ($input['security_deposit_type'] ?? '')),
@@ -1893,6 +1894,12 @@ function validatePropertyPricingInput(array $input, array $basic): array
     ];
     $errors = [];
 
+    $allowedPriceAreaBases = ['plot_area', 'builtup_area', 'carpet_area', 'super_builtup_area'];
+    if ($data['price_area_basis'] !== '' && !in_array($data['price_area_basis'], $allowedPriceAreaBases, true)) {
+        $errors[] = 'Please select a valid area for the price-per-unit calculation.';
+        $data['price_area_basis'] = '';
+    }
+
     if ($isSell) {
         if ($data['expected_price'] === '') {
             $errors[] = 'Expected price is required for sale listings.';
@@ -1909,7 +1916,6 @@ function validatePropertyPricingInput(array $input, array $basic): array
         $data['lock_in_months'] = '';
         $data['annual_rent_increase_percent'] = '';
         $data['dg_ups_included'] = 0;
-        $data['electricity_water_excluded'] = 0;
     } else {
         if ($data['rent'] === '') {
             $errors[] = 'Rent is required for rent or PG listings.';

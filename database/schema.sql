@@ -281,6 +281,7 @@ CREATE TABLE `property_pricing` (
   `draft_id` bigint(20) unsigned DEFAULT NULL,
   `expected_price` decimal(15,2) DEFAULT NULL,
   `price_per_area_unit` decimal(10,2) DEFAULT NULL,
+  `price_area_basis` varchar(30) DEFAULT NULL,
   `price_per_sqft` decimal(10,2) DEFAULT NULL,
   `rent` decimal(15,2) DEFAULT NULL,
   `deposit` varchar(100) DEFAULT NULL,

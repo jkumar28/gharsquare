@@ -265,7 +265,7 @@ function siteBasePropertyQuery(): string
                    pp.bedrooms, pp.bathrooms, pp.balconies, pp.furnishing, {$furnishingItemsSelect} {$profileDetailsSelect} pp.property_age,
                    pp.facing, pp.ownership_type, pp.parking_count, pp.floor_no, pp.total_floor,
                    pp.servant_room, pp.pooja_room, pp.study_room,
-                   pr.expected_price, pr.price_per_area_unit, pr.rent, pr.deposit,
+                   pr.expected_price, pr.price_per_area_unit, pr.price_area_basis, pr.rent, pr.deposit,
                    pr.security_deposit_type, pr.security_deposit_amount, pr.security_deposit_months,
                    pr.booking_amount, pr.maintenance, pr.maintenance_period,
                    pr.electricity_charges, pr.brokerage, pr.brokerage_type, pr.brokerage_value,

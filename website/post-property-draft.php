@@ -74,21 +74,32 @@ function validIdOrNull(array $input, string $key, callable $finder): ?int
     return $id > 0 && $finder($id) ? $id : null;
 }
 
-function publicDraftPrimaryArea(array $profile, string $category): ?float
+function publicDraftAreaSelection(array $profile, string $category, string $preferredBasis = ''): ?array
 {
     $keys = $category === 'land'
         ? ['plot_area']
         : ['builtup_area', 'carpet_area', 'super_builtup_area', 'plot_area'];
 
+    if ($preferredBasis !== '' && in_array($preferredBasis, $keys, true)) {
+        $keys = array_values(array_unique(array_merge([$preferredBasis], $keys)));
+    }
+
     foreach ($keys as $key) {
         $value = trim((string) ($profile[$key] ?? ''));
 
         if ($value !== '' && is_numeric($value) && (float) $value > 0) {
-            return (float) $value;
+            return ['key' => $key, 'value' => (float) $value];
         }
     }
 
     return null;
+}
+
+function publicDraftPrimaryArea(array $profile, string $category, string $preferredBasis = ''): ?float
+{
+    $selection = publicDraftAreaSelection($profile, $category, $preferredBasis);
+
+    return $selection !== null ? (float) $selection['value'] : null;
 }
 
 function publicIsResidentialLandType(?array $propertyType): bool
@@ -276,7 +287,9 @@ function savePublicDraftStep(int $draftId, string $step, array $input): void
         $amount = isSellListingBasic($bundle['basic'])
             ? ($validated['expected_price'] !== '' && is_numeric($validated['expected_price']) ? $validated['expected_price'] : null)
             : ($validated['rent'] !== '' && is_numeric($validated['rent']) ? $validated['rent'] : null);
-        $area = publicDraftPrimaryArea($bundle['profile'], $category);
+        $areaSelection = publicDraftAreaSelection($bundle['profile'], $category, $validated['price_area_basis']);
+        $priceAreaBasis = (string) ($areaSelection['key'] ?? '');
+        $area = isset($areaSelection['value']) ? (float) $areaSelection['value'] : null;
         $pricePerUnit = $amount !== null && $area !== null && $area > 0 ? round((float) $amount / $area, 2) : null;
         $pricingData = [
             'expected_price' => $validated['expected_price'] !== '' && is_numeric($validated['expected_price']) ? $validated['expected_price'] : null,
@@ -311,6 +324,10 @@ function savePublicDraftStep(int $draftId, string $step, array $input): void
 
         if (tableHasColumn('property_pricing', 'price_per_area_unit')) {
             $pricingData['price_per_area_unit'] = $pricePerUnit;
+        }
+
+        if (tableHasColumn('property_pricing', 'price_area_basis')) {
+            $pricingData['price_area_basis'] = $priceAreaBasis !== '' ? $priceAreaBasis : null;
         }
 
         if (tableHasColumn('property_pricing', 'price_per_sqft')) {

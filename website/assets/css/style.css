@@ -2195,9 +2195,16 @@ footer a {
 
 .post-price-primary {
     display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(220px, .65fr);
+    grid-template-columns: minmax(0, 1.4fr) minmax(230px, .9fr);
     align-items: stretch;
-    gap: 12px;
+    gap: 14px;
+}
+
+.post-price-details-title {
+    color: #16294a;
+    font-size: 19px;
+    font-weight: 700;
+    margin: 0 0 -4px;
 }
 
 .post-price-main-column {
@@ -2205,18 +2212,32 @@ footer a {
     gap: 7px;
 }
 
-.post-price-negotiable {
-    width: fit-content;
-    min-height: 30px;
-    border: 0;
-    background: transparent;
-    margin: 0;
-    padding: 3px 0;
-    font-size: 14px;
+.post-price-main-column .post-field {
+    position: relative;
+    gap: 0;
+}
+
+.post-price-main-column .post-field > label {
+    position: absolute;
+    z-index: 1;
+    top: 7px;
+    left: 13px;
+    color: #667085;
+    font-size: 12px;
+    font-weight: 500;
+    pointer-events: none;
+}
+
+.post-price-main-column .post-field > input {
+    min-height: 66px;
+    border-radius: 4px;
+    padding: 25px 13px 8px;
+    color: #415575;
+    font-size: 19px;
 }
 
 .post-price-main-column > strong {
-    color: var(--purple);
+    color: #415575;
     font-size: 15px;
     font-weight: 700;
 }
@@ -2227,13 +2248,13 @@ footer a {
 
 .post-price-unit-card {
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: 4px;
     background: #fff;
     display: grid;
     align-content: center;
-    gap: 5px;
-    min-height: 76px;
-    padding: 11px 12px;
+    gap: 7px;
+    min-height: 92px;
+    padding: 10px 13px;
 }
 
 .post-price-unit-card small {
@@ -2241,10 +2262,92 @@ footer a {
     font-size: 12px;
 }
 
-.post-price-unit-card span {
-    color: var(--text);
-    font-size: 14px;
-    line-height: 1.4;
+.post-price-unit-card > strong {
+    color: #415575;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.post-price-basis-label {
+    color: #7a8699;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.post-price-basis-label select {
+    width: auto;
+    min-height: 28px;
+    border: 0;
+    background: transparent;
+    color: #0878d1;
+    padding: 2px 22px 2px 2px;
+    font-size: 13px;
+    font-weight: 700;
+    outline: none;
+}
+
+.post-price-top-checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+}
+
+.post-price-top-checks label {
+    color: #4a5e7b;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+}
+
+.post-price-top-checks input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: #0878d1;
+}
+
+.post-additional-pricing {
+    border-top: 1px solid #e6eaf0;
+    padding-top: 12px;
+}
+
+.post-additional-pricing > summary {
+    width: fit-content;
+    color: #0878d1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    list-style: none;
+    font-weight: 700;
+}
+
+.post-additional-pricing > summary::-webkit-details-marker {
+    display: none;
+}
+
+.post-additional-pricing[open] > summary i {
+    transform: rotate(45deg);
+}
+
+.post-additional-pricing > summary i {
+    transition: transform .2s ease;
+}
+
+.post-additional-pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    padding-top: 18px;
+}
+
+.post-additional-pricing-grid > .span-2 {
+    grid-column: 1 / -1;
 }
 
 .post-pricing-group {
@@ -2855,6 +2958,14 @@ footer a {
 
     .post-price-primary {
         grid-template-columns: 1fr;
+    }
+
+    .post-additional-pricing-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .post-additional-pricing-grid > .span-2 {
+        grid-column: auto;
     }
 
     .post-office-facility {

@@ -826,27 +826,52 @@
         return words.join(" ").trim() + " Rupees";
     }
 
-    function currentAreaValue() {
+    function availablePriceAreas() {
         const category = selectedCategory();
         const keys = category === "land"
             ? ["plot_area"]
             : ["builtup_area", "carpet_area", "super_builtup_area", "plot_area"];
+        const labels = {
+            plot_area: "Plot Area",
+            builtup_area: "Built-up Area",
+            carpet_area: "Carpet Area",
+            super_builtup_area: "Super Built-up Area"
+        };
 
-        for (const key of keys) {
+        return keys.map(key => {
             const input = document.querySelector(`[name="${key}"]`);
-            const value = Number(input?.value || 0);
-            if (!input?.disabled && value > 0) {
-                return { value, source: key.replace(/_/g, " ") };
-            }
-        }
+            return { key, label: labels[key], value: Number(input?.value || 0) };
+        }).filter(area => area.value > 0);
+    }
 
-        return null;
+    function syncPriceAreaBasis() {
+        const select = document.querySelector("[data-price-area-basis]");
+        const areas = availablePriceAreas();
+        if (!select) return areas;
+
+        const preferred = select.value || select.dataset.selected || "";
+        select.innerHTML = areas.length
+            ? areas.map(area => `<option value="${area.key}">${escapeHtml(area.label)}</option>`).join("")
+            : '<option value="">Add property area first</option>';
+        select.value = areas.some(area => area.key === preferred) ? preferred : (areas[0]?.key || "");
+        select.disabled = areas.length === 0;
+        select.dataset.selected = "";
+        return areas;
+    }
+
+    function currentAreaValue() {
+        const areas = syncPriceAreaBasis();
+        const selectedBasis = document.querySelector("[data-price-area-basis]")?.value || "";
+        const selected = areas.find(area => area.key === selectedBasis) || areas[0];
+
+        return selected ? { value: selected.value, source: selected.label, key: selected.key } : null;
     }
 
     function updatePriceSummary() {
         const summary = document.querySelector("[data-price-summary]");
         const main = document.querySelector("[data-price-words-main]");
-        const unit = document.querySelector("[data-price-unit]");
+        const unitValue = document.querySelector("[data-price-unit-value]");
+        const unitLabel = document.querySelector("[data-price-unit-label]");
         const mode = selectedListingMode();
         const amountInput = mode === "sell" ? byId("expected_price") : byId("rent");
         const amount = Number(amountInput?.value || 0);
@@ -854,29 +879,33 @@
         const areaUnit = byId("area_unit")?.value || "sq.ft";
         const label = mode === "sell" ? "Price" : "Rent";
 
-        if (!summary || !main || !unit) {
+        if (!summary || !main || !unitValue || !unitLabel) {
             return;
         }
 
         if (mode === "none") {
             main.textContent = "Choose sale or rent to see amount in words.";
-            unit.textContent = "Price per unit will appear after listing type, area and amount are entered.";
+            unitLabel.textContent = "₹ Price per unit";
+            unitValue.textContent = "—";
             return;
         }
 
         if (!amount) {
             main.textContent = `Enter ${label.toLowerCase()} to see amount in words.`;
-            unit.textContent = "Price per unit will appear after area and amount are entered.";
+            unitLabel.textContent = `₹ ${label} per ${areaUnit}`;
+            unitValue.textContent = "—";
             return;
         }
 
-        main.textContent = `₹${formatIndianNumber(amount)} (${numberToIndianWords(amount)})`;
+        main.textContent = `₹ ${numberToIndianWords(amount).replace(/ Rupees$/, "")}`;
 
         if (area && area.value > 0) {
             const perUnit = amount / area.value;
-            unit.textContent = `${label} per ${areaUnit}: ₹${formatIndianNumber(perUnit)} using ${area.source}.`;
+            unitLabel.textContent = `₹ ${label} per ${areaUnit}`;
+            unitValue.textContent = `₹ ${formatIndianNumber(perUnit)}`;
         } else {
-            unit.textContent = "Add area in Property Details to calculate price per unit.";
+            unitLabel.textContent = `₹ ${label} per unit`;
+            unitValue.textContent = "Add property area first";
         }
     }
 

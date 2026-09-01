@@ -510,6 +510,10 @@ require BASE_PATH . '/admin/includes/header.php';
                         <input class="form-check-input" type="checkbox" id="negotiable" name="negotiable" value="1" <?= (int) ($bundle['pricing']['negotiable'] ?? 0) === 1 ? 'checked' : '' ?>>
                         <label class="form-check-label" for="negotiable">Negotiable</label>
                     </div>
+                    <div class="form-check align-self-end">
+                        <input class="form-check-input" type="checkbox" id="electricity_water_excluded" name="electricity_water_excluded" value="1" <?= (int) ($bundle['pricing']['electricity_water_excluded'] ?? 0) === 1 ? 'checked' : '' ?>>
+                        <label class="form-check-label" for="electricity_water_excluded">Electricity &amp; Water charges excluded</label>
+                    </div>
                 </div>
 
                 <div class="form-actions">
