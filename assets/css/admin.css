@@ -2097,6 +2097,57 @@ a {
     padding: 24px;
 }
 
+#property-wizard .wizard-panel:not(.is-active) {
+    padding-top: 15px;
+    padding-bottom: 15px;
+    box-shadow: 0 5px 16px rgba(15, 38, 72, .04);
+}
+
+#property-wizard .wizard-panel:not(.is-active) > :not(.panel-head) {
+    display: none !important;
+}
+
+#property-wizard .wizard-panel > .panel-head {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+}
+
+#property-wizard .wizard-panel > .panel-head::after {
+    content: "\f282";
+    font-family: "bootstrap-icons";
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin-left: 12px;
+    border-radius: 999px;
+    background: #f1f6f6;
+    color: #08776f;
+    transition: transform .2s ease;
+}
+
+#property-wizard .wizard-panel.is-active > .panel-head::after {
+    transform: rotate(180deg);
+}
+
+#property-wizard .wizard-panel:not(.is-active) > .panel-head {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+#property-wizard .wizard-step-link.is-active {
+    border-color: #bfe3df;
+    background: #eaf8f6;
+    color: #08726b;
+}
+
+#property-wizard .wizard-media-actions {
+    position: static;
+}
+
 #property-wizard .wizard-panel > .panel-head {
     margin-bottom: 20px;
     padding-bottom: 16px;

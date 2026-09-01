@@ -1104,12 +1104,34 @@
         });
     }
 
-    function scrollToStep(stepKey) {
+    function showWizardStep(stepKey, shouldScroll) {
         const panel = document.querySelector('[data-step-panel="' + stepKey + '"]');
 
         if (panel) {
-            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            document.querySelectorAll('[data-step-panel]').forEach(function (item) {
+                const active = item === panel;
+                item.classList.toggle('is-active', active);
+                item.setAttribute('aria-expanded', active ? 'true' : 'false');
+            });
+            document.querySelectorAll('[data-step-target]').forEach(function (button) {
+                const active = button.dataset.stepTarget === stepKey;
+                button.classList.toggle('is-active', active);
+                button.setAttribute('aria-current', active ? 'step' : 'false');
+            });
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState(null, '', window.location.pathname + window.location.search + '#' + stepKey);
+            }
+            if (shouldScroll !== false) {
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            if (stepKey === 'location') {
+                window.setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 220);
+            }
         }
+    }
+
+    function scrollToStep(stepKey) {
+        showWizardStep(stepKey, true);
     }
 
     function syncAdminAmenities(category) {
@@ -1405,6 +1427,10 @@
             return;
         }
 
+        const requestedStep = window.location.hash.replace('#', '');
+        const initialStep = document.querySelector('[data-step-panel="' + requestedStep + '"]') ? requestedStep : 'basic';
+        showWizardStep(initialStep, false);
+
         initLocationSelectors();
         initBasicTypeChooser();
         initAreaUnitLabels();
@@ -1417,6 +1443,7 @@
             const nextButton = event.target.closest('[data-next-step]');
             const refreshDescriptionsButton = event.target.closest('[data-description-refresh]');
             const useDescriptionButton = event.target.closest('[data-description-template-use]');
+            const panelHead = event.target.closest('[data-step-panel] > .panel-head');
 
             if (stepButton) {
                 scrollToStep(stepButton.dataset.stepTarget || '');
@@ -1424,6 +1451,13 @@
 
             if (nextButton) {
                 scrollToStep(nextButton.dataset.nextStep || '');
+            }
+
+            if (panelHead && !event.target.closest('button, a, input, select, textarea')) {
+                const targetPanel = panelHead.closest('[data-step-panel]');
+                if (targetPanel && !targetPanel.classList.contains('is-active')) {
+                    showWizardStep(targetPanel.dataset.stepPanel || '', true);
+                }
             }
 
             if (refreshDescriptionsButton) {

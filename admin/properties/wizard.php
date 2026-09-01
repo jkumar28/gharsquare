@@ -106,6 +106,9 @@ require BASE_PATH . '/admin/includes/header.php';
                     <strong data-step-percent="<?= e((string) $stepKey) ?>"><?= e((string) $step['percent']) ?>%</strong>
                 </button>
             <?php endforeach; ?>
+            <button class="wizard-step-link" type="button" data-step-target="review">
+                <span>Review &amp; Submit</span><strong>Final</strong>
+            </button>
         </nav>
 
         <div class="wizard-missing">
@@ -704,9 +707,12 @@ require BASE_PATH . '/admin/includes/header.php';
                     <?= propertyMediaCardHtml($media) ?>
                 <?php endforeach; ?>
             </div>
+            <div class="form-actions wizard-media-actions">
+                <button class="btn btn-outline-secondary wizard-next" type="button" data-next-step="review">Next Step</button>
+            </div>
         </section>
 
-        <section class="panel-card wizard-panel">
+        <section class="panel-card wizard-panel" data-step-panel="review">
             <div class="panel-head">
                 <div><p class="eyebrow mb-1">Final Step</p><h3>Submit Listing</h3></div>
             </div>
