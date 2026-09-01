@@ -63,6 +63,15 @@ foreach ($listingTypes as $type) {
 }
 $selectedPropertyTypeName = (string) ($selectedPropertyType['name'] ?? 'Not selected');
 $selectedCategoryLabel = (string) ($categoryLabels[$selectedCategory] ?? 'Residential');
+$profile = $bundle['profile'];
+$furnishingOptions = propertyFurnishingOptions();
+$furnishingItemOptions = propertyFurnishingItemOptions();
+$selectedFurnishingItems = normalizePropertyFurnishingItems($profile['furnishing_items'] ?? [], (string) ($profile['furnishing'] ?? ''));
+$officeProfile = propertyOfficeProfileSummary($profile);
+$officeFacilities = is_array($officeProfile['facilities'] ?? null) ? $officeProfile['facilities'] : [];
+$officeFireSafety = array_values(array_filter(array_map('strval', $officeProfile['fire_safety'] ?? [])));
+$pgProfile = propertyPgProfileSummary($profile);
+$pgSuitableFor = array_values(array_filter(array_map('strval', $pgProfile['suitable_for'] ?? [])));
 $amenityGroupLabels = [
     'amenities' => 'Amenities',
     'property_features' => 'Property Features',
@@ -152,6 +161,7 @@ require BASE_PATH . '/admin/includes/header.php';
                                         type="button"
                                         data-listing-choice
                                         data-listing-id="<?= e((string) $type['id']) ?>"
+                                        data-listing-name="<?= e((string) $type['name']) ?>"
                                         aria-pressed="<?= $isActive ? 'true' : 'false' ?>"
                                     >
                                         <?= e((string) $type['name']) ?>
@@ -205,6 +215,7 @@ require BASE_PATH . '/admin/includes/header.php';
                                         data-property-type-choice
                                         data-property-type-id="<?= e((string) $type['id']) ?>"
                                         data-property-type-category="<?= e((string) $type['category']) ?>"
+                                        data-property-type-name="<?= e((string) $type['name']) ?>"
                                         data-property-type-custom="<?= propertyTypeUsesCustomName($type) ? '1' : '0' ?>"
                                         aria-pressed="<?= $isActive ? 'true' : 'false' ?>"
                                     >
@@ -402,7 +413,7 @@ require BASE_PATH . '/admin/includes/header.php';
                         <select class="form-select" name="floor_no">
                             <option value="">Select floor</option>
                             <option value="0" <?= (string) ($bundle['profile']['floor_no'] ?? '') === '0' ? 'selected' : '' ?>>Ground Floor</option>
-                            <?php for ($floorNumber = 1; $floorNumber <= 100; $floorNumber++): ?>
+                            <?php for ($floorNumber = 1; $floorNumber <= 40; $floorNumber++): ?>
                                 <option value="<?= $floorNumber ?>" <?= (string) ($bundle['profile']['floor_no'] ?? '') === (string) $floorNumber ? 'selected' : '' ?>>Floor <?= $floorNumber ?></option>
                             <?php endfor; ?>
                         </select>
@@ -444,6 +455,51 @@ require BASE_PATH . '/admin/includes/header.php';
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <section class="admin-smart-profile form-field-span-2" data-admin-pg-profile hidden>
+                        <input type="hidden" name="pg_profile_present" value="1">
+                        <div class="admin-smart-profile-head"><div><h4>Tell us about your PG</h4><p>Room sharing, availability and tenant suitability.</p></div></div>
+                        <div class="admin-smart-profile-grid">
+                            <div class="form-field"><label>Room Type</label><div class="admin-inline-options"><?php foreach (['sharing' => 'Sharing', 'private' => 'Private'] as $value => $label): ?><label><input type="radio" name="pg_room_type" value="<?= e($value) ?>" <?= (string) ($pgProfile['room_type'] ?? '') === $value ? 'checked' : '' ?>> <?= e($label) ?></label><?php endforeach; ?></div></div>
+                            <div class="form-field"><label>Total rooms</label><input class="form-control" name="pg_total_rooms" type="number" min="0" value="<?= e((string) ($pgProfile['total_rooms'] ?? '')) ?>"></div>
+                            <div class="form-field"><label>Available rooms</label><input class="form-control" name="pg_available_rooms" type="number" min="0" value="<?= e((string) ($pgProfile['available_rooms'] ?? '')) ?>"></div>
+                            <div class="form-field"><label>Covered Parking</label><input class="form-control" name="pg_covered_parking" type="number" min="0" value="<?= e((string) ($pgProfile['covered_parking'] ?? '')) ?>"></div>
+                            <div class="form-field"><label>Open Parking</label><input class="form-control" name="pg_open_parking" type="number" min="0" value="<?= e((string) ($pgProfile['open_parking'] ?? '')) ?>"></div>
+                        </div>
+                        <div class="feature-check-grid admin-profile-checks">
+                            <label class="feature-check"><input type="checkbox" name="pg_attached_bathroom" value="1" <?= !empty($pgProfile['attached_bathroom']) ? 'checked' : '' ?>><span>Attached Bathroom</span></label>
+                            <label class="feature-check"><input type="checkbox" name="pg_attached_balcony" value="1" <?= !empty($pgProfile['attached_balcony']) ? 'checked' : '' ?>><span>Attached Balcony</span></label>
+                            <label class="feature-check"><input type="checkbox" name="pg_common_area_furnishing" value="1" <?= !empty($pgProfile['common_area_furnishing']) ? 'checked' : '' ?>><span>Common Area Furnishing</span></label>
+                            <label class="feature-check"><input type="checkbox" name="pg_store_room" value="1" <?= !empty($pgProfile['store_room']) ? 'checked' : '' ?>><span>Store Room</span></label>
+                        </div>
+                        <div class="admin-smart-profile-grid mt-3">
+                            <div class="form-field"><label>Available for</label><div class="admin-inline-options"><?php foreach (['girls' => 'Girls', 'boys' => 'Boys', 'any' => 'Any'] as $value => $label): ?><label><input type="radio" name="pg_available_for" value="<?= e($value) ?>" <?= (string) ($pgProfile['available_for'] ?? '') === $value ? 'checked' : '' ?>> <?= e($label) ?></label><?php endforeach; ?></div></div>
+                            <div class="form-field"><label>Suitable for</label><div class="admin-inline-options"><?php foreach (['students' => 'Students', 'working_professionals' => 'Working Professionals'] as $value => $label): ?><label><input type="checkbox" name="pg_suitable_for[]" value="<?= e($value) ?>" <?= in_array($value, $pgSuitableFor, true) ? 'checked' : '' ?>> <?= e($label) ?></label><?php endforeach; ?></div></div>
+                        </div>
+                    </section>
+
+                    <section class="admin-smart-profile form-field-span-2" data-admin-office-profile hidden>
+                        <input type="hidden" name="office_profile_present" value="1">
+                        <div class="admin-smart-profile-head"><div><h4>Describe your office setup</h4><p>Seating, meeting, utility and safety readiness.</p></div></div>
+                        <div class="admin-smart-profile-grid">
+                            <?php foreach (['office_min_seats' => ['Minimum Seats', 'min_seats'], 'office_max_seats' => ['Maximum Seats', 'max_seats'], 'office_cabins' => ['Cabins', 'cabins'], 'office_meeting_rooms' => ['Meeting Rooms', 'meeting_rooms'], 'office_private_washrooms' => ['Private Washrooms', 'private_washrooms'], 'office_shared_washrooms' => ['Shared Washrooms', 'shared_washrooms'], 'office_staircases' => ['Staircases', 'staircases']] as $inputName => [$label, $key]): ?>
+                                <div class="form-field"><label><?= e($label) ?></label><input class="form-control" name="<?= e($inputName) ?>" type="number" min="0" value="<?= e((string) ($officeProfile[$key] ?? '')) ?>"></div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php foreach (['office_washrooms' => ['Washrooms', 'washrooms'], 'office_conference_room' => ['Conference Room', 'conference_room'], 'office_reception_area' => ['Reception Area', 'reception_area']] as $inputName => [$label, $key]): ?>
+                            <div class="admin-office-row"><strong><?= e($label) ?></strong><div class="admin-inline-options"><label><input type="radio" name="<?= e($inputName) ?>" value="available" <?= (string) ($officeProfile[$key] ?? 'not_available') === 'available' ? 'checked' : '' ?>> Available</label><label><input type="radio" name="<?= e($inputName) ?>" value="not_available" <?= (string) ($officeProfile[$key] ?? 'not_available') !== 'available' ? 'checked' : '' ?>> Not Available</label></div></div>
+                        <?php endforeach; ?>
+                        <div class="admin-office-row"><strong>Pantry Type</strong><div class="admin-inline-options"><?php foreach (['private' => 'Private', 'shared' => 'Shared', 'not_available' => 'Not Available'] as $value => $label): ?><label><input type="radio" name="office_pantry_type" value="<?= e($value) ?>" <?= (string) ($officeProfile['pantry_type'] ?? 'not_available') === $value ? 'checked' : '' ?>> <?= e($label) ?></label><?php endforeach; ?></div></div>
+                        <div class="admin-office-facilities"><h5>Facilities available</h5><?php foreach (propertyOfficeFacilityOptions() as $key => $label): ?><div class="admin-office-row"><strong><?= e($label) ?></strong><div class="admin-inline-options"><label><input type="radio" name="office_facility_<?= e($key) ?>" value="available" <?= (string) ($officeFacilities[$key] ?? 'not_available') === 'available' ? 'checked' : '' ?>> Available</label><label><input type="radio" name="office_facility_<?= e($key) ?>" value="not_available" <?= (string) ($officeFacilities[$key] ?? 'not_available') !== 'available' ? 'checked' : '' ?>> Not Available</label></div></div><?php endforeach; ?></div>
+                        <div class="mt-3"><h5>Fire safety measures</h5><div class="feature-check-grid admin-profile-checks"><?php foreach (propertyOfficeFireSafetyOptions() as $value => $label): ?><label class="feature-check"><input type="checkbox" name="office_fire_safety[]" value="<?= e($value) ?>" <?= in_array($value, $officeFireSafety, true) ? 'checked' : '' ?>><span><?= e($label) ?></span></label><?php endforeach; ?></div></div>
+                    </section>
+
+                    <section class="admin-smart-profile form-field-span-2" data-admin-furnishing-panel hidden>
+                        <input type="hidden" name="furnishing_items_present" value="1">
+                        <div class="admin-smart-profile-head"><div><h4>What is included in furnishing?</h4><p>Select available furniture and appliances.</p></div><span data-admin-furnishing-count><?= count($selectedFurnishingItems) ?> selected</span></div>
+                        <div class="feature-check-grid admin-profile-checks">
+                            <?php foreach ($furnishingItemOptions as $value => $label): ?><label class="feature-check" data-admin-furnishing-value="<?= e($value) ?>"><input type="checkbox" name="furnishing_items[]" value="<?= e($value) ?>" data-admin-furnishing-item <?= in_array($value, $selectedFurnishingItems, true) ? 'checked' : '' ?>><span><?= e($label) ?></span></label><?php endforeach; ?>
+                        </div>
+                    </section>
                     <div class="form-field form-field-span-2">
                         <label class="">Extra Rooms / Spaces</label>
                         <div class="feature-check-grid">

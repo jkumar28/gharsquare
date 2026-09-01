@@ -1023,6 +1023,7 @@
             }
 
             syncAdminAmenities(nextCategory);
+            syncAdminProfileDetails();
         }
 
         listingButtons.forEach(function (button) {
@@ -1035,6 +1036,7 @@
                 }
 
                 updatePricingRequiredLabels();
+                syncAdminProfileDetails();
             });
         });
 
@@ -1076,6 +1078,30 @@
         applyCategory((categoryInput && categoryInput.value) || 'residential', propertyTypeInput.value !== '');
         updatePricingRequiredLabels();
         updatePriceWords();
+
+        const furnishingSelect = document.querySelector('[data-step-panel="profile"] [name="furnishing"]');
+        if (furnishingSelect) {
+            furnishingSelect.addEventListener('change', function () {
+                const selectedItems = document.querySelectorAll('[data-admin-furnishing-item]:checked');
+                if (furnishingSelect.value === 'fully' && selectedItems.length === 0) {
+                    const defaults = ['light_fan', 'wardrobe', 'bed', 'sofa', 'dining_table', 'modular_kitchen', 'geyser', 'ac', 'curtains', 'tv', 'fridge', 'washing_machine'];
+                    document.querySelectorAll('[data-admin-furnishing-item]').forEach(function (input) {
+                        input.checked = defaults.includes(input.value);
+                    });
+                }
+                syncAdminProfileDetails();
+                const count = document.querySelectorAll('[data-admin-furnishing-item]:checked:not(:disabled)').length;
+                const target = document.querySelector('[data-admin-furnishing-count]');
+                if (target) target.textContent = count + ' selected';
+            });
+        }
+        document.querySelectorAll('[data-admin-furnishing-item]').forEach(function (input) {
+            input.addEventListener('change', function () {
+                const count = document.querySelectorAll('[data-admin-furnishing-item]:checked').length;
+                const target = document.querySelector('[data-admin-furnishing-count]');
+                if (target) target.textContent = count + ' selected';
+            });
+        });
     }
 
     function scrollToStep(stepKey) {
@@ -1098,6 +1124,60 @@
         document.querySelectorAll('[data-admin-amenity-group]').forEach(function (group) {
             group.hidden = !group.querySelector('[data-admin-amenity-categories]:not([hidden])');
         });
+    }
+
+    function syncAdminProfileDetails() {
+        const category = (byId('property_category') ? byId('property_category').value : '') || 'residential';
+        const propertyTypeId = byId('property_type_id') ? byId('property_type_id').value : '';
+        const listingTypeId = byId('listing_type_id') ? byId('listing_type_id').value : '';
+        const propertyButton = document.querySelector('[data-property-type-choice][data-property-type-id="' + propertyTypeId + '"]');
+        const listingButton = document.querySelector('[data-listing-choice][data-listing-id="' + listingTypeId + '"]');
+        const propertyName = (propertyButton && propertyButton.dataset.propertyTypeName || '').toLowerCase();
+        const listingName = (listingButton && listingButton.dataset.listingName || '').toLowerCase();
+        const isOffice = category === 'commercial' && (propertyName.includes('office') || propertyName.includes('co-working') || propertyName.includes('coworking'));
+        const isPg = listingName === 'pg' || listingName.includes('paying guest') || listingName.includes('co-living');
+        const form = document.querySelector('[data-step-panel="profile"] form');
+        if (!form) return;
+
+        function toggleSection(selector, visible) {
+            const section = form.querySelector(selector);
+            if (!section) return;
+            section.hidden = !visible;
+            section.querySelectorAll('input, select, textarea').forEach(function (control) {
+                control.disabled = !visible;
+            });
+        }
+
+        function toggleField(name, visible) {
+            const control = form.querySelector('[name="' + name + '"]');
+            const wrapper = control ? control.closest('.form-field') : null;
+            if (wrapper) wrapper.hidden = !visible;
+            if (control) control.disabled = !visible;
+        }
+
+        ['builtup_area', 'super_builtup_area', 'carpet_area'].forEach(function (name) { toggleField(name, category !== 'land'); });
+        toggleField('plot_area', category === 'land' || category === 'commercial');
+        ['bedrooms', 'bathrooms', 'balconies'].forEach(function (name) { toggleField(name, category === 'residential' && !isPg); });
+        toggleField('parking_count', category !== 'land' && !isOffice && !isPg);
+        ['floor_no', 'total_floor'].forEach(function (name) { toggleField(name, category !== 'land'); });
+        toggleField('furnishing', category !== 'land' && !isOffice);
+        toggleField('property_age', category !== 'land' && !isOffice);
+        toggleField('facing', !isOffice && !isPg);
+        toggleField('ownership_type', !isOffice && !isPg);
+
+        toggleSection('[data-admin-pg-profile]', isPg);
+        toggleSection('[data-admin-office-profile]', isOffice);
+        const furnishing = form.querySelector('[name="furnishing"]');
+        toggleSection('[data-admin-furnishing-panel]', !isOffice && category !== 'land' && ['semi', 'fully'].includes(furnishing ? furnishing.value : ''));
+        const pgFurnishing = ['ac', 'bed', 'light_fan', 'geyser', 'curtains', 'wardrobe', 'tv', 'fridge', 'washing_machine'];
+        form.querySelectorAll('[data-admin-furnishing-value]').forEach(function (option) {
+            const visible = !isPg || pgFurnishing.includes(option.dataset.adminFurnishingValue || '');
+            option.hidden = !visible;
+            const input = option.querySelector('input');
+            if (input) input.disabled = !visible;
+        });
+        const extraRooms = form.querySelector('[name="servant_room"]')?.closest('.form-field');
+        if (extraRooms) extraRooms.hidden = category !== 'residential' || isPg;
     }
 
     async function handleStepForm(form, options) {

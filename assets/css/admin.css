@@ -2264,6 +2264,116 @@ a {
     display: none !important;
 }
 
+#property-wizard .form-field[hidden],
+#property-wizard .admin-smart-profile[hidden],
+#property-wizard [data-admin-furnishing-value][hidden] {
+    display: none !important;
+}
+
+#property-wizard .admin-smart-profile {
+    padding: 20px;
+    border: 1px solid #dfe7ef;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #fbfdfd 0%, #f7fafc 100%);
+}
+
+#property-wizard .admin-smart-profile-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+#property-wizard .admin-smart-profile-head h4,
+#property-wizard .admin-office-facilities h5,
+#property-wizard .admin-smart-profile h5 {
+    margin: 0 0 5px;
+    color: #102a55;
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+#property-wizard .admin-smart-profile-head p {
+    margin: 0;
+    color: var(--muted);
+    font-size: .86rem;
+}
+
+#property-wizard .admin-smart-profile-head > span {
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #eaf8f6;
+    color: #08726b;
+    font-size: .78rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+#property-wizard .admin-smart-profile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+#property-wizard .admin-inline-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    padding-top: 7px;
+}
+
+#property-wizard .admin-inline-options label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 38px;
+    padding: 7px 13px;
+    border: 1px solid #dfe5ed;
+    border-radius: 999px;
+    background: #fff;
+    color: #50627e;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#property-wizard .admin-inline-options input {
+    accent-color: #10847c;
+}
+
+#property-wizard .admin-profile-checks {
+    margin-top: 15px;
+}
+
+#property-wizard .admin-profile-checks .feature-check {
+    border-radius: 999px;
+    background: #fff;
+}
+
+#property-wizard .admin-profile-checks .feature-check:has(input:checked) {
+    border-color: #10847c;
+    background: #eaf8f6;
+    color: #08726b;
+}
+
+#property-wizard .admin-office-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid #e8edf2;
+}
+
+#property-wizard .admin-office-row > strong {
+    color: #334a69;
+    font-size: .9rem;
+}
+
+#property-wizard .admin-office-facilities {
+    margin-top: 18px;
+}
+
 @media (max-width: 1100px) {
     #property-wizard.wizard-shell {
         grid-template-columns: 1fr;
@@ -2302,6 +2412,16 @@ a {
 
     #property-wizard .selection-block {
         padding: 14px;
+    }
+
+    #property-wizard .admin-smart-profile-grid {
+        grid-template-columns: 1fr;
+    }
+
+    #property-wizard .admin-office-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
     }
 }
 
