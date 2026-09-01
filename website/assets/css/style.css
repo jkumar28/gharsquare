@@ -2217,6 +2217,10 @@ footer a {
     font-weight: 700;
 }
 
+.post-custom-property-type {
+    margin-top: 12px;
+}
+
 .post-price-summary span {
     color: var(--text);
 }

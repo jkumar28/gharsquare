@@ -40,6 +40,9 @@ try {
 
         upsertDraftSection('property_basic', $draftId, [
             'property_type_id' => $validation['data']['property_type_id'],
+            'custom_property_type' => $validation['data']['custom_property_type'] !== ''
+                ? $validation['data']['custom_property_type']
+                : null,
             'listing_type_id' => $validation['data']['listing_type_id'],
             'title' => $validation['data']['title'],
             'slug' => slugify($validation['data']['title']) . '-' . $draftId,

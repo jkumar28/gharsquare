@@ -329,6 +329,25 @@ function propertyTypeCategoryFromBasic(array $basic): string
     return (string) ($propertyType['category'] ?? '');
 }
 
+function propertyTypeUsesCustomName(?array $propertyType): bool
+{
+    $name = strtolower(trim((string) ($propertyType['name'] ?? '')));
+
+    return in_array($name, ['other commercial property', 'other land'], true);
+}
+
+function propertyTypeDisplayName(array $basic, ?array $propertyType = null): string
+{
+    $customName = trim((string) ($basic['custom_property_type'] ?? ''));
+    $propertyType ??= !empty($basic['property_type_id'])
+        ? findPropertyType((int) $basic['property_type_id'])
+        : null;
+
+    return propertyTypeUsesCustomName($propertyType) && $customName !== ''
+        ? $customName
+        : trim((string) ($propertyType['name'] ?? ''));
+}
+
 function isLandPropertyBasic(array $basic): bool
 {
     return propertyTypeCategoryFromBasic($basic) === 'land';
@@ -755,7 +774,7 @@ function propertyDescriptionTemplatesFromBundle(array $bundle): array
     $location = $bundle['location'];
     $pricing = $bundle['pricing'];
     $propertyType = findPropertyType((int) ($basic['property_type_id'] ?? 0));
-    $propertyTypeName = trim((string) ($propertyType['name'] ?? ''));
+    $propertyTypeName = propertyTypeDisplayName($basic, $propertyType);
     $typeLabel = $propertyTypeName !== '' ? $propertyTypeName : 'Property';
     $listingType = findListingType((int) ($basic['listing_type_id'] ?? 0));
     $listingLabel = trim((string) ($listingType['name'] ?? 'Listing'));
@@ -835,7 +854,7 @@ function propertyDraftsAll(): array
                    u.name AS user_name,
                    pb.title,
                    pb.posted_by,
-                   pt.name AS property_type_name,
+                   COALESCE(NULLIF(pb.custom_property_type, ''), pt.name) AS property_type_name,
                    lt.name AS listing_type_name,
                    p.id AS property_id,
                    p.status AS property_status
@@ -898,7 +917,7 @@ function findPropertyDraftListRow(int $draftId): ?array
                 u.name AS user_name,
                 pb.title,
                 pb.posted_by,
-                pt.name AS property_type_name,
+                COALESCE(NULLIF(pb.custom_property_type, ''), pt.name) AS property_type_name,
                 lt.name AS listing_type_name,
                 p.id AS property_id,
                 p.status AS property_status
@@ -1542,6 +1561,7 @@ function validatePropertyBasicInput(array $input): array
     $data = [
         'user_id' => (int) ($input['user_id'] ?? 0),
         'property_type_id' => (int) ($input['property_type_id'] ?? 0),
+        'custom_property_type' => trim((string) ($input['custom_property_type'] ?? '')),
         'listing_type_id' => $listingTypeId,
         'title' => trim((string) ($input['title'] ?? '')),
         'description' => trim((string) ($input['description'] ?? '')),
@@ -1556,6 +1576,16 @@ function validatePropertyBasicInput(array $input): array
     }
     if ($data['property_type_id'] <= 0 || !findPropertyType($data['property_type_id'])) {
         $errors[] = 'Please select a valid property type.';
+    }
+    $selectedPropertyType = $data['property_type_id'] > 0 ? findPropertyType($data['property_type_id']) : null;
+    if (propertyTypeUsesCustomName($selectedPropertyType)) {
+        if ($data['custom_property_type'] === '') {
+            $errors[] = 'Please enter the closest property type.';
+        } elseif (stringLength($data['custom_property_type']) > 100) {
+            $errors[] = 'Other property type must be 100 characters or fewer.';
+        }
+    } else {
+        $data['custom_property_type'] = '';
     }
     if ($data['listing_type_id'] <= 0 || !findListingType($data['listing_type_id'])) {
         $errors[] = 'Please select a valid listing type.';

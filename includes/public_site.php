@@ -255,7 +255,9 @@ function siteBasePropertyQuery(): string
 
     return "SELECT p.id, p.slug, p.status, p.draft_id, p.user_id, p.published_at, p.created_at,
                    pb.title, pb.description, pb.posted_by, pb.purpose_note, pb.available_from,
-                   pt.id AS property_type_id, pt.name AS property_type_name, pt.category AS property_category,
+                   pt.id AS property_type_id,
+                   COALESCE(NULLIF(pb.custom_property_type, ''), pt.name) AS property_type_name,
+                   pt.category AS property_category,
                    lt.id AS listing_type_id, lt.name AS listing_type_name,
                    pl.address_line, pl.landmark, pl.pincode, pl.map_address, pl.latitude, pl.longitude,
                    l.name AS locality_name, ci.name AS city_name, s.name AS state_name,
@@ -316,7 +318,8 @@ function sitePropertyConditions(array $filters, array &$params): string
 
     if ($query !== '') {
         $sql .= ' AND (pb.title LIKE :q OR pb.description LIKE :q OR pl.address_line LIKE :q
-                  OR pl.landmark LIKE :q OR l.name LIKE :q OR ci.name LIKE :q OR pt.name LIKE :q)';
+                  OR pl.landmark LIKE :q OR l.name LIKE :q OR ci.name LIKE :q
+                  OR pt.name LIKE :q OR pb.custom_property_type LIKE :q)';
         $params[':q'] = '%' . $query . '%';
     }
 

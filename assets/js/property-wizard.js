@@ -866,6 +866,8 @@
         const selectedListingText = document.querySelector('[data-selected-listing]');
         const selectedCategoryText = document.querySelector('[data-selected-category]');
         const selectedPropertyTypeText = document.querySelector('[data-selected-property-type]');
+        const customPropertyTypeField = document.querySelector('[data-admin-custom-property-type]');
+        const customPropertyTypeInput = byId('custom_property_type');
         const availableFromLabel = document.querySelector('[data-basic-required-label="available_from"]');
 
         if (!listingInput || !propertyTypeInput || propertyTypeButtons.length === 0) {
@@ -937,6 +939,21 @@
             });
         }
 
+        function updateCustomPropertyType() {
+            const selectedButton = Array.from(propertyTypeButtons).find(function (button) {
+                return button.dataset.propertyTypeId === propertyTypeInput.value;
+            });
+            const enabled = selectedButton && selectedButton.dataset.propertyTypeCustom === '1';
+
+            if (customPropertyTypeField) {
+                customPropertyTypeField.hidden = !enabled;
+            }
+            if (customPropertyTypeInput) {
+                customPropertyTypeInput.disabled = !enabled;
+                customPropertyTypeInput.required = Boolean(enabled);
+            }
+        }
+
         function applyCategory(category, preserveType) {
             const nextCategory = category || 'residential';
             let hasVisibleActiveType = false;
@@ -982,6 +999,8 @@
                     selectedPropertyTypeText.textContent = 'Not selected';
                 }
             }
+
+            updateCustomPropertyType();
 
             if (typeHeading) {
                 typeHeading.textContent = questionText(nextCategory);
@@ -1030,6 +1049,7 @@
                 if (selectedPropertyTypeText) {
                     selectedPropertyTypeText.textContent = button.textContent.trim() || 'Not selected';
                 }
+                updateCustomPropertyType();
             });
         });
 

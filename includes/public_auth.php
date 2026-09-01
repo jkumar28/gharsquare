@@ -881,7 +881,7 @@ function publicUserPropertyDrafts(int $limit = 50): array
         'SELECT pd.id, pd.current_step, pd.completion_percent, pd.is_submitted, pd.submitted_at, pd.updated_at,
                 pb.title, pb.posted_by, pb.purpose_note,
                 lt.name AS listing_type_name,
-                pt.name AS property_type_name,
+                COALESCE(NULLIF(pb.custom_property_type, \'\'), pt.name) AS property_type_name,
                 pt.category AS property_category,
                 p.id AS property_id,
                 p.status AS property_status,

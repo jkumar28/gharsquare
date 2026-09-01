@@ -423,6 +423,8 @@
         const subtypeSection = document.querySelector("[data-property-subtype-section]");
         const subtypeList = document.querySelector("[data-property-subtype-list]");
         const subtypeHeading = document.querySelector("[data-property-subtype-heading]");
+        const customTypeSection = document.querySelector("[data-custom-property-type]");
+        const customTypeInput = byId("custom_property_type");
         const groupInput = byId("property_group");
         const typeSelect = document.querySelector("[data-property-type-select]");
         const groups = activePropertyTypeGroups();
@@ -461,6 +463,7 @@
         if (!selectedGroup) {
             subtypeSection.hidden = true;
             subtypeList.innerHTML = "";
+            if (customTypeSection) setWrapperEnabled(customTypeSection, false);
             return;
         }
 
@@ -472,11 +475,15 @@
         if (subtypeHeading) {
             subtypeHeading.textContent = selectedGroup.question || "Select exact property type";
         }
-        subtypeList.innerHTML = selectedGroup.types.map(type => `
+        const acceptsCustomType = selectedGroup.key === "other-commercial" || selectedGroup.key === "other-land";
+        subtypeList.hidden = acceptsCustomType;
+        subtypeList.innerHTML = acceptsCustomType ? "" : selectedGroup.types.map(type => `
             <button type="button" class="post-type-chip${String(typeSelect.value) === String(type.id) ? " active" : ""}" data-property-subtype="${type.id}">
                 ${escapeHtml(type.name)}
             </button>
         `).join("");
+        if (customTypeSection) setWrapperEnabled(customTypeSection, acceptsCustomType);
+        if (customTypeInput) customTypeInput.required = acceptsCustomType;
     }
 
     function choosePropertyGroup(groupKey) {
@@ -905,6 +912,11 @@
             if (!category) addError("Select a property category.", form.querySelectorAll(".post-choice-grid")[1]);
             if (!hasValue(group)) addError("Select a property group.", form.querySelector("[data-property-type-flow]"));
             if (!hasValue(type)) addError("Select the exact property subtype.", form.querySelector("[data-property-type-flow]"));
+            const customType = field("custom_property_type");
+            const selectedTypeName = selectedPropertyTypeName();
+            if ((selectedTypeName === "other commercial property" || selectedTypeName === "other land") && !hasValue(customType)) {
+                addError("Enter the closest property type.", customType);
+            }
             if (!hasValue(postedBy)) addError("Select who is posting the property.", postedBy);
             if (!hasValue(title)) addError("Enter a property title.", title);
             if (selectedListingMode() === "rent" && !hasValue(availableFrom)) addError("Select the available-from date.", availableFrom);

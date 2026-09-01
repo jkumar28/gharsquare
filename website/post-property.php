@@ -320,6 +320,11 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
                                 <div class="post-selection-block" data-property-subtype-section hidden>
                                     <label data-property-subtype-heading>Select exact property type</label>
                                     <div class="post-type-chip-grid" data-property-subtype-list></div>
+                                    <div class="post-field post-custom-property-type" data-custom-property-type hidden>
+                                        <label for="custom_property_type">Enter the closest property type</label>
+                                        <input id="custom_property_type" name="custom_property_type" type="text" maxlength="100" value="<?= e((string) ($basic['custom_property_type'] ?? '')) ?>" placeholder="Example: Banquet hall, petrol pump">
+                                        <small>Enter the commonly used name for this property.</small>
+                                    </div>
                                 </div>
                             </div>
                             <div class="post-field col-12">

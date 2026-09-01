@@ -189,6 +189,7 @@ require BASE_PATH . '/admin/includes/header.php';
                                         data-property-type-choice
                                         data-property-type-id="<?= e((string) $type['id']) ?>"
                                         data-property-type-category="<?= e((string) $type['category']) ?>"
+                                        data-property-type-custom="<?= propertyTypeUsesCustomName($type) ? '1' : '0' ?>"
                                         aria-pressed="<?= $isActive ? 'true' : 'false' ?>"
                                     >
                                         <?= e((string) $type['name']) ?>
@@ -200,6 +201,12 @@ require BASE_PATH . '/admin/includes/header.php';
                                 <strong data-selected-property-type><?= e($selectedPropertyTypeName) ?></strong>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="form-field form-field-span-2" data-admin-custom-property-type<?= propertyTypeUsesCustomName($selectedPropertyType) ? '' : ' hidden' ?>>
+                        <label class="required-label" for="custom_property_type">Other Property Type</label>
+                        <input class="form-control" id="custom_property_type" name="custom_property_type" type="text" maxlength="100" value="<?= e((string) ($bundle['basic']['custom_property_type'] ?? '')) ?>" placeholder="Enter the closest property type"<?= propertyTypeUsesCustomName($selectedPropertyType) ? ' required' : ' disabled' ?>>
+                        <span class="field-hint">Required when an Other property type is selected.</span>
                     </div>
 
                     <div class="form-field">

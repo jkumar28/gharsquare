@@ -30,6 +30,7 @@ $listRow = findPropertyDraftListRow($draftId) ?? [
 ];
 $user = findUser((int) ($draft['user_id'] ?? 0));
 $propertyType = findPropertyType((int) ($basic['property_type_id'] ?? 0));
+$propertyTypeName = propertyTypeDisplayName($basic, $propertyType);
 $listingType = findListingType((int) ($basic['listing_type_id'] ?? 0));
 $country = findCountry((int) ($location['country_id'] ?? 0));
 $state = findState((int) ($location['state_id'] ?? 0));
@@ -331,7 +332,7 @@ require BASE_PATH . '/admin/includes/header.php';
                     </article>
                     <article class="review-summary-card">
                         <span>Property Type</span>
-                        <strong><?= e($displayValue($propertyType['name'] ?? '')) ?></strong>
+                        <strong><?= e($displayValue($propertyTypeName)) ?></strong>
                         <p><?= e($categoryLabel) ?><?php if (($listingType['name'] ?? '') !== ''): ?> / <?= e((string) $listingType['name']) ?><?php endif; ?></p>
                     </article>
                     <article class="review-summary-card">

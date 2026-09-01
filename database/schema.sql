@@ -122,6 +122,7 @@ CREATE TABLE `property_basic` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `draft_id` bigint(20) unsigned DEFAULT NULL,
   `property_type_id` int(11) DEFAULT NULL,
+  `custom_property_type` varchar(100) DEFAULT NULL,
   `listing_type_id` int(11) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
   `slug` varchar(255) DEFAULT NULL,

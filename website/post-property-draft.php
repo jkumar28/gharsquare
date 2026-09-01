@@ -196,6 +196,9 @@ function savePublicDraftStep(int $draftId, string $step, array $input): void
 
         upsertDraftSection('property_basic', $draftId, [
             'property_type_id' => $propertyTypeId,
+            'custom_property_type' => propertyTypeUsesCustomName($propertyType)
+                ? nullableString($input, 'custom_property_type', 100)
+                : null,
             'listing_type_id' => $listingTypeId,
             'title' => $title,
             'slug' => $title ? slugify($title) . '-' . $draftId : null,
