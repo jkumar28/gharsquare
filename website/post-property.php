@@ -679,23 +679,23 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
                         <div class="post-panel-title"><span>Step 4</span><h2>Pricing</h2></div>
                         <p class="post-context-note" data-pricing-context>Pricing fields adjust from listing type and property category.</p>
                         <div class="post-form-grid">
-                            <div class="post-field span-2" data-pricing-field data-pricing-mode="sell">
-                                <div class="post-price-label-row">
-                                    <label for="expected_price">Expected Price</label>
+                            <div class="post-price-primary span-2" data-price-summary>
+                                <div class="post-price-main-column">
+                                    <div class="post-field" data-pricing-field data-pricing-mode="sell">
+                                        <label for="expected_price">Expected Price</label>
+                                        <input id="expected_price" class="js-price-input" name="expected_price" type="number" min="0" step="0.01" value="<?= e((string) ($pricing['expected_price'] ?? '')) ?>">
+                                    </div>
+                                    <div class="post-field" data-pricing-field data-pricing-mode="rent">
+                                        <label for="rent">Monthly Rent</label>
+                                        <input id="rent" class="js-price-input" name="rent" type="number" min="0" step="0.01" value="<?= e((string) ($pricing['rent'] ?? '')) ?>">
+                                    </div>
                                     <label class="post-check post-price-negotiable"><input type="checkbox" name="negotiable" value="1"<?= checkedAttr($pricing['negotiable'] ?? 0) ?>> Price negotiable</label>
+                                    <strong data-price-words-main>Enter amount to see price in words.</strong>
                                 </div>
-                                <input id="expected_price" class="js-price-input" name="expected_price" type="number" min="0" step="0.01" value="<?= e((string) ($pricing['expected_price'] ?? '')) ?>">
-                            </div>
-                            <div class="post-field span-2" data-pricing-field data-pricing-mode="rent">
-                                <div class="post-price-label-row">
-                                    <label for="rent">Monthly Rent</label>
-                                    <label class="post-check post-price-negotiable"><input type="checkbox" name="negotiable" value="1"<?= checkedAttr($pricing['negotiable'] ?? 0) ?>> Price negotiable</label>
+                                <div class="post-price-unit-card">
+                                    <small>Calculated price</small>
+                                    <span data-price-unit>Price per unit will appear after area and amount are entered.</span>
                                 </div>
-                                <input id="rent" class="js-price-input" name="rent" type="number" min="0" step="0.01" value="<?= e((string) ($pricing['rent'] ?? '')) ?>">
-                            </div>
-                            <div class="post-price-summary span-2" data-price-summary>
-                                <strong data-price-words-main>Enter amount to see price in words.</strong>
-                                <span data-price-unit>Price per unit will appear after area and amount are entered.</span>
                             </div>
                             <div class="post-field" data-pricing-field data-pricing-mode="sell"><label for="booking_amount">Booking Amount</label><input id="booking_amount" class="js-price-input" name="booking_amount" type="number" min="0" step="0.01" value="<?= e((string) ($pricing['booking_amount'] ?? '')) ?>"></div>
                             <div class="post-field" data-pricing-field data-pricing-mode="both"><label for="maintenance">Maintenance</label><input id="maintenance" class="js-price-input" name="maintenance" type="number" min="0" step="0.01" value="<?= e((string) ($pricing['maintenance'] ?? '')) ?>"></div>

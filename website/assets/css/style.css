@@ -2193,27 +2193,31 @@ footer a {
     gap: 4px;
 }
 
-.post-price-label-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
+.post-price-primary {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(220px, .65fr);
+    align-items: stretch;
     gap: 12px;
 }
 
-.post-price-label-row > label:first-child {
-    margin-bottom: 0;
+.post-price-main-column {
+    display: grid;
+    gap: 7px;
 }
 
 .post-price-negotiable {
-    flex: 0 0 auto;
+    width: fit-content;
+    min-height: 30px;
+    border: 0;
+    background: transparent;
     margin: 0;
-    font-size: 13px;
+    padding: 3px 0;
+    font-size: 14px;
 }
 
-.post-price-summary strong {
+.post-price-main-column > strong {
     color: var(--purple);
-    font-size: 18px;
+    font-size: 15px;
     font-weight: 700;
 }
 
@@ -2221,8 +2225,26 @@ footer a {
     margin-top: 12px;
 }
 
-.post-price-summary span {
+.post-price-unit-card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    display: grid;
+    align-content: center;
+    gap: 5px;
+    min-height: 76px;
+    padding: 11px 12px;
+}
+
+.post-price-unit-card small {
+    color: #667085;
+    font-size: 12px;
+}
+
+.post-price-unit-card span {
     color: var(--text);
+    font-size: 14px;
+    line-height: 1.4;
 }
 
 .post-pricing-group {
@@ -2828,6 +2850,10 @@ footer a {
     .post-media-stats,
     .post-media-upload-layout,
     .post-public-media-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .post-price-primary {
         grid-template-columns: 1fr;
     }
 
