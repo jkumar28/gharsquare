@@ -336,6 +336,7 @@ function savePublicDraftStep(int $draftId, string $step, array $input): void
 
         upsertDraftSection('property_pricing', $draftId, $pricingData);
     } elseif ($step === 'amenities') {
+        $bundle = getPropertyDraftBundle($draftId);
         $ids = array_map('intval', $input['amenity_ids'] ?? []);
         $propertyCategory = propertyTypeCategoryFromBasic($bundle['basic']);
         $validIds = array_map(
