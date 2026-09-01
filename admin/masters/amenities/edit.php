@@ -23,6 +23,8 @@ $amenity = [
     'name' => old('name', (string) $existingAmenity['name']),
     'category' => old('category', (string) ($existingAmenity['category'] ?? '')),
     'icon' => old('icon', (string) ($existingAmenity['icon'] ?? '')),
+    'applicable_categories' => old('applicable_categories', explode(',', (string) ($existingAmenity['applicable_categories'] ?? 'residential,commercial,land'))),
+    'sort_order' => old('sort_order', (string) ($existingAmenity['sort_order'] ?? 0)),
 ];
 clearOldInput();
 $formAction = ADMIN_URL . '/masters/amenities/update.php';

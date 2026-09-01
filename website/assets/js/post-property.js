@@ -1156,7 +1156,23 @@
         syncProfileFields();
         syncProfileLimits();
         syncPricingFields();
+        syncAmenityFields();
         updatePriceSummary();
+    }
+
+    function syncAmenityFields() {
+        const category = selectedCategory();
+        document.querySelectorAll("[data-amenity-categories]").forEach(element => {
+            const categories = (element.dataset.amenityCategories || "").split(/\s+/).filter(Boolean);
+            const visible = category === "" || categories.includes(category);
+            element.hidden = !visible;
+            element.querySelectorAll("input, select").forEach(control => {
+                control.disabled = !visible;
+            });
+        });
+        document.querySelectorAll("[data-amenity-group]").forEach(group => {
+            group.hidden = !group.querySelector("[data-amenity-categories]:not([hidden])");
+        });
     }
 
     function renderDescriptionTemplates(templates, options = {}) {

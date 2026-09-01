@@ -47,6 +47,7 @@ require BASE_PATH . '/admin/includes/header.php';
                 <th>Name</th>
                 <th>Category</th>
                 <th>Icon</th>
+                <th>Shown For</th>
                 <th>Linked Drafts</th>
                 <th class="text-end">Actions</th>
             </tr>
@@ -59,6 +60,7 @@ require BASE_PATH . '/admin/includes/header.php';
                         <td><strong><?= e((string) $amenity['name']) ?></strong></td>
                         <td><?= e((string) ($amenity['category'] ?: '-')) ?></td>
                         <td><?= e((string) ($amenity['icon'] ?: '-')) ?></td>
+                        <td><?= e(ucwords(str_replace(',', ', ', (string) ($amenity['applicable_categories'] ?? 'All')))) ?></td>
                         <td><?= e((string) $amenity['usage_count']) ?></td>
                         <td class="text-end">
                             <div class="table-actions">
@@ -74,7 +76,7 @@ require BASE_PATH . '/admin/includes/header.php';
                 <?php endforeach; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="6">
+                    <td colspan="7">
                         <div class="empty-panel">
                             <h4>No amenities found</h4>
                             <p>Add amenities before building the full property feature forms.</p>

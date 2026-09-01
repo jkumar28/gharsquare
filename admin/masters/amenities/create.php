@@ -14,6 +14,8 @@ $amenity = [
     'name' => old('name'),
     'category' => old('category'),
     'icon' => old('icon'),
+    'applicable_categories' => old('applicable_categories', ['residential', 'commercial', 'land']),
+    'sort_order' => old('sort_order', '0'),
 ];
 clearOldInput();
 $formAction = ADMIN_URL . '/masters/amenities/store.php';

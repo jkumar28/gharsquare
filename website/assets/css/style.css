@@ -1795,6 +1795,117 @@ footer a {
     gap: 8px;
 }
 
+.post-amenity-profile-fields {
+    display: grid;
+    grid-template-columns: minmax(220px, .8fr) minmax(300px, 1.2fr);
+    gap: 22px;
+    padding: 18px;
+    margin: 18px 0 26px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fbfcff;
+}
+
+.post-room-details h3,
+.post-amenity-group h3 {
+    margin: 0 0 10px;
+    color: #10254a;
+    font-size: 18px;
+}
+
+.post-room-details > span,
+.post-amenity-group > p {
+    display: block;
+    margin: -4px 0 10px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.post-choice-chips,
+.post-amenity-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+.post-choice-chips label,
+.post-amenity-chip {
+    margin: 0;
+    cursor: pointer;
+}
+
+.post-choice-chips input,
+.post-amenity-chip input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.post-choice-chips span,
+.post-amenity-chip span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 38px;
+    padding: 7px 15px;
+    border: 1px solid #dde3ec;
+    border-radius: 999px;
+    background: #fff;
+    color: #50627e;
+    font-weight: 500;
+    transition: .18s ease;
+}
+
+.post-amenity-chip span i {
+    font-size: 14px;
+}
+
+.post-choice-chips input:checked + span,
+.post-amenity-chip input:checked + span {
+    border-color: var(--teal);
+    background: #eaf8f6;
+    color: #086f68;
+    box-shadow: 0 0 0 2px rgba(14, 132, 123, .08);
+}
+
+.post-amenity-chip input:checked + span i::before {
+    content: "\f26e";
+}
+
+.post-amenity-groups {
+    display: grid;
+    gap: 28px;
+}
+
+.post-amenity-group {
+    padding-bottom: 4px;
+}
+
+.post-amenity-group + .post-amenity-group {
+    padding-top: 24px;
+    border-top: 1px solid #edf0f5;
+}
+
+.post-amenity-chip[hidden],
+.post-amenity-group[hidden],
+.post-amenity-profile-fields[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 768px) {
+    .post-amenity-profile-fields {
+        grid-template-columns: 1fr;
+        gap: 18px;
+        padding: 14px;
+    }
+
+    .post-choice-chips span,
+    .post-amenity-chip span {
+        padding: 7px 12px;
+        font-size: 14px;
+    }
+}
+
 .post-choice,
 .post-check {
     border: 1px solid var(--line);

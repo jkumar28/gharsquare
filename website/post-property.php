@@ -810,10 +810,65 @@ $propertyTypeFlow = publicPropertyTypeFlowPayload($propertyTypes);
                         <input type="hidden" name="draft_id" value="<?= e((string) $draftId) ?>">
                         <input type="hidden" name="action" value="save_step">
                         <input type="hidden" name="step" value="amenities">
-                        <div class="post-panel-title"><span>Step 5</span><h2>Amenities</h2></div>
-                        <div class="post-amenity-grid">
-                            <?php foreach ($amenities as $amenity): ?>
-                                <label class="post-check"><input type="checkbox" name="amenity_ids[]" value="<?= e((string) $amenity['id']) ?>"<?= checkedAttr(in_array((int) $amenity['id'], $bundle['amenity_ids'], true)) ?>> <?= e((string) $amenity['name']) ?></label>
+                        <div class="post-panel-title"><span>Step 5</span>
+                            <h2>Amenities</h2>
+                        </div>
+                        <p class="post-context-note">Options automatically adjust to the property type selected in Basic Details.</p>
+                        <div class="post-amenity-profile-fields" data-amenity-categories="residential commercial">
+                            <div class="post-field">
+                                <label for="flooring_type">Type of flooring</label>
+                                <select id="flooring_type" name="flooring_type">
+                                    <option value="">Select flooring</option>
+                                    <?php foreach (['vitrified' => 'Vitrified', 'marble' => 'Marble', 'wooden' => 'Wooden', 'ceramic' => 'Ceramic Tiles', 'granite' => 'Granite', 'mosaic' => 'Mosaic', 'cement' => 'Cement', 'other' => 'Other'] as $value => $label): ?>
+                                        <option value="<?= e($value) ?>" <?= selectedAttr($profile['flooring_type'] ?? '', $value) ?>><?= e($label) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="post-room-details">
+                                <h3>Room Details</h3>
+                                <span>Balconies</span>
+                                <div class="post-choice-chips">
+                                    <?php foreach ([0 => '0', 1 => '1', 2 => '2', 3 => '3', 4 => 'More than 3'] as $value => $label): ?>
+                                        <label><input type="radio" name="balconies" value="<?= e((string) $value) ?>" <?= checkedAttr((int) ($profile['balconies'] ?? 0) === $value) ?>><span><?= e($label) ?></span></label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                        <?php
+                        $amenityGroupLabels = [
+                            'amenities' => 'Amenities',
+                            'property_features' => 'Property Features',
+                            'society_building' => 'Society / Building Features',
+                            'additional_features' => 'Additional Features',
+                            'other_features' => 'Other Features',
+                            'location_advantages' => 'Location Advantages',
+                        ];
+                        $groupedAmenities = [];
+                        foreach ($amenities as $amenity) {
+                            $groupedAmenities[(string) ($amenity['category'] ?: 'amenities')][] = $amenity;
+                        }
+                        foreach (array_keys($groupedAmenities) as $groupKey) {
+                            if (!isset($amenityGroupLabels[$groupKey])) {
+                                $amenityGroupLabels[$groupKey] = ucwords(str_replace(['_', '-'], ' ', $groupKey));
+                            }
+                        }
+                        ?>
+                        <div class="post-amenity-groups">
+                            <?php foreach ($amenityGroupLabels as $groupKey => $groupLabel): ?>
+                                <?php if (!empty($groupedAmenities[$groupKey])): ?>
+                                    <section class="post-amenity-group" data-amenity-group>
+                                        <h3><?= e($groupLabel) ?></h3>
+                                        <?php if ($groupKey === 'location_advantages'): ?><p>Highlight the nearby landmarks</p><?php endif; ?>
+                                        <div class="post-amenity-grid">
+                                            <?php foreach ($groupedAmenities[$groupKey] as $amenity): ?>
+                                                <label class="post-amenity-chip" data-amenity-categories="<?= e(str_replace(',', ' ', (string) ($amenity['applicable_categories'] ?? 'residential,commercial,land'))) ?>">
+                                                    <input type="checkbox" name="amenity_ids[]" value="<?= e((string) $amenity['id']) ?>" <?= checkedAttr(in_array((int) $amenity['id'], $bundle['amenity_ids'], true)) ?>>
+                                                    <span><i class="bi bi-plus-lg" aria-hidden="true"></i><?= e((string) $amenity['name']) ?></span>
+                                                </label>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </section>
+                                <?php endif; ?>
                             <?php endforeach; ?>
                         </div>
                         <div class="post-actions"><button type="button" data-prev-step="pricing">Back</button><button type="submit">Save Draft</button><button type="button" data-next-step="media">Next</button></div>

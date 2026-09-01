@@ -337,9 +337,24 @@ function savePublicDraftStep(int $draftId, string $step, array $input): void
         upsertDraftSection('property_pricing', $draftId, $pricingData);
     } elseif ($step === 'amenities') {
         $ids = array_map('intval', $input['amenity_ids'] ?? []);
-        $validIds = array_map(static fn (array $row): int => (int) $row['id'], amenitiesAll());
+        $propertyCategory = propertyTypeCategoryFromBasic($bundle['basic']);
+        $validIds = array_map(
+            static fn (array $row): int => (int) $row['id'],
+            array_filter(amenitiesAll(), static function (array $row) use ($propertyCategory): bool {
+                $categories = array_filter(array_map('trim', explode(',', (string) ($row['applicable_categories'] ?? 'residential,commercial,land'))));
+                return in_array($propertyCategory, $categories, true);
+            })
+        );
         $ids = array_values(array_intersect(array_unique(array_filter($ids)), $validIds));
         savePropertyAmenities($draftId, $ids);
+        if (tableHasColumn('property_profile', 'flooring_type')) {
+            $flooring = trim((string) ($input['flooring_type'] ?? ''));
+            $allowedFlooring = ['', 'vitrified', 'marble', 'wooden', 'ceramic', 'granite', 'mosaic', 'cement', 'other'];
+            upsertDraftSection('property_profile', $draftId, [
+                'flooring_type' => in_array($flooring, $allowedFlooring, true) && $flooring !== '' ? $flooring : null,
+                'balconies' => max(0, min(4, (int) ($input['balconies'] ?? ($bundle['profile']['balconies'] ?? 0)))),
+            ]);
+        }
     } elseif ($step === 'media') {
         // Media is persisted by post-property-media.php. This step only refreshes progress.
     } elseif ($step === 'review') {

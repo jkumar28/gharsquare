@@ -954,11 +954,14 @@ function deleteListingType(int $id): void
 
 function amenitiesAll(): array
 {
-    $sql = "SELECT am.id, am.name, am.category, am.icon, COUNT(pa.draft_id) AS usage_count
+    $extraColumns = tableHasColumn('amenities_master', 'applicable_categories')
+        ? 'am.applicable_categories, am.sort_order,'
+        : "'residential,commercial,land' AS applicable_categories, 0 AS sort_order,";
+    $sql = "SELECT am.id, am.name, am.category, am.icon, {$extraColumns} COUNT(pa.draft_id) AS usage_count
             FROM amenities_master am
             LEFT JOIN property_amenities pa ON pa.amenity_id = am.id
-            GROUP BY am.id, am.name, am.category, am.icon
-            ORDER BY am.category ASC, am.name ASC";
+            GROUP BY am.id, am.name, am.category, am.icon" . (tableHasColumn('amenities_master', 'applicable_categories') ? ', am.applicable_categories, am.sort_order' : '') . "
+            ORDER BY am.category ASC, sort_order ASC, am.name ASC";
 
     try {
         return db()->query($sql)->fetchAll();
@@ -989,7 +992,8 @@ function amenityCategories(): array
 
 function findAmenity(int $id): ?array
 {
-    $stmt = db()->prepare('SELECT id, name, category, icon FROM amenities_master WHERE id = :id LIMIT 1');
+    $columns = tableHasColumn('amenities_master', 'applicable_categories') ? ', applicable_categories, sort_order' : '';
+    $stmt = db()->prepare("SELECT id, name, category, icon{$columns} FROM amenities_master WHERE id = :id LIMIT 1");
     $stmt->execute([':id' => $id]);
 
     return $stmt->fetch() ?: null;
@@ -1019,6 +1023,8 @@ function validateAmenityInput(array $input, ?int $ignoreId = null): array
     $name = trim((string) ($input['name'] ?? ''));
     $category = trim((string) ($input['category'] ?? ''));
     $icon = trim((string) ($input['icon'] ?? ''));
+    $applicable = array_values(array_intersect(['residential', 'commercial', 'land'], array_map('strval', $input['applicable_categories'] ?? [])));
+    $sortOrder = max(0, (int) ($input['sort_order'] ?? 0));
     $errors = [];
 
     if ($name === '') {
@@ -1044,6 +1050,8 @@ function validateAmenityInput(array $input, ?int $ignoreId = null): array
             'name' => $name,
             'category' => $category,
             'icon' => $icon,
+            'applicable_categories' => implode(',', $applicable ?: ['residential', 'commercial', 'land']),
+            'sort_order' => $sortOrder,
         ],
         'errors' => $errors,
     ];
@@ -1051,11 +1059,13 @@ function validateAmenityInput(array $input, ?int $ignoreId = null): array
 
 function createAmenity(array $data): int
 {
-    $stmt = db()->prepare('INSERT INTO amenities_master (name, category, icon) VALUES (:name, :category, :icon)');
+    $stmt = db()->prepare('INSERT INTO amenities_master (name, category, applicable_categories, icon, sort_order) VALUES (:name, :category, :applicable_categories, :icon, :sort_order)');
     $stmt->execute([
         ':name' => $data['name'],
         ':category' => $data['category'] !== '' ? $data['category'] : null,
         ':icon' => $data['icon'] !== '' ? $data['icon'] : null,
+        ':applicable_categories' => $data['applicable_categories'],
+        ':sort_order' => $data['sort_order'],
     ]);
 
     return (int) db()->lastInsertId();
@@ -1063,12 +1073,14 @@ function createAmenity(array $data): int
 
 function updateAmenity(int $id, array $data): void
 {
-    $stmt = db()->prepare('UPDATE amenities_master SET name = :name, category = :category, icon = :icon WHERE id = :id');
+    $stmt = db()->prepare('UPDATE amenities_master SET name = :name, category = :category, applicable_categories = :applicable_categories, icon = :icon, sort_order = :sort_order WHERE id = :id');
     $stmt->execute([
         ':id' => $id,
         ':name' => $data['name'],
         ':category' => $data['category'] !== '' ? $data['category'] : null,
         ':icon' => $data['icon'] !== '' ? $data['icon'] : null,
+        ':applicable_categories' => $data['applicable_categories'],
+        ':sort_order' => $data['sort_order'],
     ]);
 }
 

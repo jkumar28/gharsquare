@@ -16,7 +16,9 @@ CREATE TABLE `amenities_master` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) DEFAULT NULL,
   `category` varchar(100) DEFAULT NULL,
+  `applicable_categories` varchar(100) NOT NULL DEFAULT 'residential,commercial,land',
   `icon` varchar(100) DEFAULT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -327,6 +329,7 @@ CREATE TABLE `property_profile` (
   `floor_no` int(11) DEFAULT NULL,
   `total_floor` int(11) DEFAULT NULL,
   `furnishing` enum('unfurnished','semi','fully') DEFAULT NULL,
+  `flooring_type` varchar(40) DEFAULT NULL,
   `furnishing_items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`furnishing_items`)),
   `profile_details` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`profile_details`)),
   `property_age` varchar(50) DEFAULT NULL,
