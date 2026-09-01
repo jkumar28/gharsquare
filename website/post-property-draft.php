@@ -243,7 +243,7 @@ function savePublicDraftStep(int $draftId, string $step, array $input): void
             'parking_count' => nullableIntValue($input, 'parking_count'),
             'servant_room' => isset($input['servant_room']) ? 1 : 0,
             'pooja_room' => isset($input['pooja_room']) ? 1 : 0,
-            'study_room' => isset($input['study_room']) ? 1 : 0,
+            'study_room' => $profileCategory === 'residential' && isset($input['study_room']) ? 1 : 0,
             'floor_no' => nullableIntValue($input, 'floor_no'),
             'total_floor' => nullableIntValue($input, 'total_floor'),
             'furnishing' => in_array($furnishing, ['unfurnished', 'semi', 'fully'], true) ? $furnishing : null,

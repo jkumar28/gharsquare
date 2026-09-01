@@ -439,7 +439,7 @@ require BASE_PATH . '/admin/includes/header.php';
                                 <input type="checkbox" name="pooja_room" value="1" <?= (int) ($bundle['profile']['pooja_room'] ?? 0) === 1 ? 'checked' : '' ?>>
                                 <span>Pooja Room</span>
                             </label>
-                            <label class="feature-check">
+                            <label class="feature-check" data-residential-study-room>
                                 <input type="checkbox" name="study_room" value="1" <?= (int) ($bundle['profile']['study_room'] ?? 0) === 1 ? 'checked' : '' ?>>
                                 <span>Study Room</span>
                             </label>

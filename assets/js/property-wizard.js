@@ -892,6 +892,16 @@
             document.querySelectorAll('[data-land-optional-label]').forEach(function (label) {
                 label.classList.toggle('required-label', !isLand);
             });
+
+            document.querySelectorAll('[data-residential-study-room]').forEach(function (wrapper) {
+                const enabled = category === 'residential';
+                const input = wrapper.querySelector('input[name="study_room"]');
+                wrapper.hidden = !enabled;
+                if (input) {
+                    input.disabled = !enabled;
+                    if (!enabled) input.checked = false;
+                }
+            });
         }
 
         function updatePricingRequiredLabels() {
