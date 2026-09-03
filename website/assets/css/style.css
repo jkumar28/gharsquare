@@ -3235,6 +3235,90 @@ footer a {
         padding: 82px 12px 30px;
     }
 
+    .post-wizard {
+        gap: 10px;
+    }
+
+    .post-wizard-side {
+        position: sticky;
+        z-index: 20;
+        top: 68px;
+        padding: 10px 10px 8px;
+        overflow: hidden;
+        border-radius: 14px;
+        box-shadow: 0 10px 28px rgba(19, 27, 52, .12);
+    }
+
+    .post-progress-card {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 4px 10px;
+        padding: 0 2px 9px;
+        border-bottom: 0;
+    }
+
+    .post-progress-card .auth-kicker {
+        display: none;
+    }
+
+    .post-progress-card strong {
+        margin: 0;
+        font-size: 22px;
+    }
+
+    .post-progress-card p {
+        margin: 0;
+        overflow: hidden;
+        font-size: 12px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .post-progress-bar {
+        grid-column: 1 / -1;
+        height: 4px;
+        margin-top: 3px;
+    }
+
+    .post-step-list {
+        display: flex;
+        gap: 7px;
+        padding: 2px 0;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        scrollbar-width: none;
+        scroll-snap-type: inline proximity;
+    }
+
+    .post-step-list::-webkit-scrollbar {
+        display: none;
+    }
+
+    .post-step-link {
+        flex: 0 0 auto;
+        min-height: 38px;
+        padding: 9px 12px;
+        border: 1px solid #e4e8ef;
+        border-radius: 999px;
+        background: #f7f9fb;
+        font-size: 12px;
+        scroll-snap-align: start;
+    }
+
+    .post-step-link strong {
+        display: none;
+    }
+
+    .post-step-link.active {
+        border-color: var(--dark);
+        box-shadow: 0 4px 12px rgba(34, 25, 69, .18);
+    }
+
+    .post-missing-box {
+        display: none;
+    }
+
     .post-wizard-content,
     .post-step-panel {
         padding: 14px;

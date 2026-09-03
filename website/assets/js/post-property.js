@@ -121,6 +121,10 @@
         document.querySelectorAll("[data-step-target]").forEach(button => {
             button.classList.toggle("active", button.dataset.stepTarget === step);
         });
+        if (window.innerWidth <= 650) {
+            const activeButton = document.querySelector(`[data-step-target="${CSS.escape(step)}"]`);
+            window.requestAnimationFrame(() => activeButton?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" }));
+        }
         syncSmartContext();
         if (step === "review") {
             fetchDescriptionTemplates({ autofill: true });
