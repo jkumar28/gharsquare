@@ -1711,6 +1711,8 @@
                     }
                     start = Math.max(0, Math.min(start, maximumTime - minimumClipSeconds));
                     end = Math.min(maximumTime, Math.max(end, start + minimumClipSeconds));
+                    start = Math.round(start * 10) / 10;
+                    end = Math.round(end * 10) / 10;
                     range.value = String(start);
                     endRange.value = String(end);
                     label.textContent = formatClipTime(start);
@@ -1720,17 +1722,21 @@
                     selection.style.right = `${100 - (end / maximumTime) * 100}%`;
                     preview.dataset.clipStart = String(start);
                     preview.dataset.clipEnd = String(end);
+                    popup.dataset.clipStart = String(start);
+                    popup.dataset.clipEnd = String(end);
                     preview.currentTime = changed === "end" ? Math.max(start, end - 1) : start;
-                    const validation = popup.querySelector(".swal2-validation-message");
-                    if (validation && end - start >= minimumClipSeconds && end - start <= maximumClipSeconds) {
-                        validation.textContent = "";
-                        validation.style.display = "none";
+                    if (end - start >= minimumClipSeconds && end - start <= maximumClipSeconds) {
+                        if (typeof Swal.resetValidationMessage === "function") Swal.resetValidationMessage();
+                        const validation = popup.querySelector(".swal2-validation-message");
+                        if (validation) validation.removeAttribute("style");
                     }
                 };
                 range.addEventListener("input", () => syncTrimRange("start"));
                 endRange.addEventListener("input", () => syncTrimRange("end"));
                 preview.dataset.clipStart = "0";
                 preview.dataset.clipEnd = String(initialEnd);
+                popup.dataset.clipStart = "0";
+                popup.dataset.clipEnd = String(initialEnd);
                 selection.style.left = "0%";
                 selection.style.right = `${100 - (initialEnd / maximumTime) * 100}%`;
                 preview.addEventListener("play", () => {
@@ -1748,14 +1754,16 @@
                 });
             },
             preConfirm: () => {
-                const popup = document.querySelector(".swal2-popup");
-                const start = Number(popup?.querySelector("[data-clip-start]")?.value || 0);
-                const end = Number(popup?.querySelector("[data-clip-end]")?.value || 0);
-                if (end - start < minimumClipSeconds || end - start > maximumClipSeconds) {
+                const popup = typeof Swal.getPopup === "function" ? Swal.getPopup() : document.querySelector(".swal2-popup");
+                const start = Number(popup?.dataset.clipStart || 0);
+                const end = Number(popup?.dataset.clipEnd || initialEnd);
+                const selectedDuration = Math.round((end - start) * 10) / 10;
+                if (selectedDuration < minimumClipSeconds || selectedDuration > maximumClipSeconds) {
                     Swal.showValidationMessage("Select a clip between 15 and 60 seconds.");
                     return false;
                 }
-                return { start, duration: end - start };
+                if (typeof Swal.resetValidationMessage === "function") Swal.resetValidationMessage();
+                return { start, duration: selectedDuration };
             }
         });
         URL.revokeObjectURL(previewUrl);
