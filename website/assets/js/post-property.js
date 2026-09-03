@@ -28,6 +28,16 @@
     let descriptionTemplatesLoaded = false;
     let videoTrimmerLoader = null;
 
+    const videoUploadForm = document.querySelector('.post-media-upload-form[data-upload-kind="video"]');
+    const videoUploadHint = videoUploadForm?.querySelector(".post-media-dropzone small");
+    if (videoUploadHint) videoUploadHint.textContent = "Large videos accepted. Select 15–60 seconds; automatic compression is applied before upload.";
+    document.querySelectorAll(".post-media-stats > div").forEach(stat => {
+        if (stat.querySelector("span")?.textContent.trim() === "Max video size") {
+            stat.querySelector("strong").textContent = "Auto";
+            stat.querySelector("span").textContent = "Video compression";
+        }
+    });
+
     function escapeHtml(value) {
         return String(value || "")
             .replace(/&/g, "&amp;")
@@ -1541,17 +1551,17 @@
     }
 
     function validateVideoFiles(files) {
-        const maxBytes = 20 * 1024 * 1024;
+        const minSeconds = 14.5;
         const maxSeconds = 60.5;
         return Promise.all(Array.from(files || []).map(file => new Promise((resolve, reject) => {
-            if (file.size > maxBytes) {
-                reject(new Error(`${file.name} is larger than 20 MB.`));
-                return;
-            }
             const video = document.createElement("video");
             video.preload = "metadata";
             video.onloadedmetadata = function () {
                 URL.revokeObjectURL(video.src);
+                if (video.duration < minSeconds) {
+                    reject(new Error(`${file.name} must be at least 15 seconds long.`));
+                    return;
+                }
                 if (video.duration > maxSeconds) {
                     reject(new Error(`${file.name} must be 1 minute or shorter.`));
                     return;
@@ -1803,13 +1813,13 @@
             await ffmpeg.writeFile(inputName, await fetchFile(file));
             const commonArgs = [
                 "-y", "-ss", String(startSeconds), "-i", inputName, "-t", String(clipDuration),
-                "-map", "0:v:0", "-vf", "scale=1280:-2:force_original_aspect_ratio=decrease",
+                "-map", "0:v:0", "-vf", "scale=960:-2:force_original_aspect_ratio=decrease",
                 "-threads", "1", "-pix_fmt", "yuv420p"
             ];
             const attempts = [
-                [...commonArgs, "-map", "0:a?", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "30", "-c:a", "aac", "-b:a", "96k", outputName],
-                [...commonArgs, "-an", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "31", outputName],
-                [...commonArgs, "-an", "-c:v", "mpeg4", "-q:v", "7", outputName]
+                [...commonArgs, "-map", "0:a?", "-c:v", "libx264", "-preset", "ultrafast", "-b:v", "1200k", "-maxrate", "1400k", "-bufsize", "2800k", "-c:a", "aac", "-b:a", "80k", outputName],
+                [...commonArgs, "-an", "-c:v", "libx264", "-preset", "ultrafast", "-b:v", "1200k", "-maxrate", "1400k", "-bufsize", "2800k", outputName],
+                [...commonArgs, "-an", "-c:v", "mpeg4", "-b:v", "1200k", outputName]
             ];
             let exitCode = 1;
             for (const args of attempts) {
@@ -1823,9 +1833,6 @@
             }
             const data = await ffmpeg.readFile(outputName);
             const trimmedFile = new File([data], `${file.name.replace(/\.[^.]+$/, "")}-clip.mp4`, { type: "video/mp4", lastModified: Date.now() });
-            if (trimmedFile.size > 20 * 1024 * 1024) {
-                throw new Error("The prepared clip is still larger than 20 MB. Select a shorter section and try again.");
-            }
             return trimmedFile;
         } finally {
             ffmpeg.off("progress", progressHandler);
@@ -1838,10 +1845,16 @@
 
     async function prepareQueuedVideo(file) {
         const duration = await videoDuration(file);
-        if (duration <= 60.5) return file;
-        const selection = await chooseVideoClipStart(file, duration);
-        if (selection === null) return null;
-        return trimVideoToMinute(file, selection.start, selection.duration);
+        if (duration < 14.5) throw new Error("Video must be at least 15 seconds long.");
+        if (duration > 60.5) {
+            const selection = await chooseVideoClipStart(file, duration);
+            if (selection === null) return null;
+            return trimVideoToMinute(file, selection.start, selection.duration);
+        }
+        if (file.size > 20 * 1024 * 1024) {
+            return trimVideoToMinute(file, 0, Math.min(60, duration));
+        }
+        return file;
     }
 
     const mediaUploadQueues = new WeakMap();
@@ -1972,8 +1985,8 @@
         if (kind === "image" && (!imageTypes.includes(file.type) || file.size > 10 * 1024 * 1024)) {
             return "Use a valid JPG, PNG, GIF or WebP image up to 10 MB.";
         }
-        if (kind === "video" && (!videoTypes.includes(file.type) || file.size > 20 * 1024 * 1024)) {
-            return "Use a valid MP4, WebM or MOV video up to 20 MB.";
+        if (kind === "video" && !videoTypes.includes(file.type)) {
+            return "Use a valid MP4, WebM or MOV video.";
         }
         return "";
     }
@@ -1983,7 +1996,7 @@
         const kind = form.dataset.uploadKind || "";
         for (const originalFile of Array.from(files || [])) {
             let file = originalFile;
-            if (kind === "video" && ["video/mp4", "video/webm", "video/quicktime"].includes(file.type) && file.size <= 200 * 1024 * 1024) {
+            if (kind === "video" && ["video/mp4", "video/webm", "video/quicktime"].includes(file.type)) {
                 file = await prepareQueuedVideo(file);
                 if (!file) continue;
             }
