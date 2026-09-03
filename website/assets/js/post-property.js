@@ -1,5 +1,9 @@
 (function () {
     const wizard = document.getElementById("postPropertyWizard");
+    const postPropertyScript = document.currentScript || Array.from(document.scripts).find(script => script.src.includes("/post-property.js"));
+    const videoTrimmerAssetBase = postPropertyScript
+        ? new URL("../vendor/ffmpeg/", postPropertyScript.src).href
+        : new URL("website/assets/vendor/ffmpeg/", `${window.location.origin}/`).href;
 
     if (!wizard) {
         return;
@@ -1629,22 +1633,20 @@
             document.head.appendChild(script);
         });
 
-        videoTrimmerLoader = Promise.all([
-            loadScript("https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.js", "FFmpegWASM"),
-            loadScript("https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/umd/index.js", "FFmpegUtil")
-        ]).then(async ([ffmpegPackage, utilPackage]) => {
+        videoTrimmerLoader = loadScript(`${videoTrimmerAssetBase}ffmpeg.js`, "FFmpegWASM").then(async ffmpegPackage => {
             const ffmpeg = new ffmpegPackage.FFmpeg();
-            const coreBase = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
-            const ffmpegBase = "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/umd";
             await ffmpeg.load({
-                classWorkerURL: await utilPackage.toBlobURL(`${ffmpegBase}/814.ffmpeg.js`, "text/javascript"),
-                coreURL: await utilPackage.toBlobURL(`${coreBase}/ffmpeg-core.js`, "text/javascript"),
-                wasmURL: await utilPackage.toBlobURL(`${coreBase}/ffmpeg-core.wasm`, "application/wasm")
+                classWorkerURL: `${videoTrimmerAssetBase}814.ffmpeg.js`,
+                coreURL: `${videoTrimmerAssetBase}ffmpeg-core.js`,
+                wasmURL: `${videoTrimmerAssetBase}ffmpeg-core.wasm`
             });
-            return { ffmpeg, fetchFile: utilPackage.fetchFile };
+            return {
+                ffmpeg,
+                fetchFile: async file => new Uint8Array(await file.arrayBuffer())
+            };
         }).catch(error => {
             videoTrimmerLoader = null;
-            throw error;
+            throw new Error(`Video trimmer could not start (${error.message || "runtime unavailable"}). Refresh once and try again.`);
         });
         return videoTrimmerLoader;
     }

@@ -1,6 +1,10 @@
 DirectoryIndex index.php
 Options -MultiViews
 
+<IfModule mod_mime.c>
+    AddType application/wasm .wasm
+</IfModule>
+
 RewriteEngine On
 
 <IfModule mod_deflate.c>
