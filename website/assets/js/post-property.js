@@ -1790,19 +1790,37 @@
             const target = document.querySelector(".swal2-popup [data-clip-processing]");
             if (target) target.textContent = `Preparing clip… ${Math.max(0, Math.min(100, Math.round(Number(progress || 0) * 100)))}%`;
         };
+        const ffmpegLog = [];
+        const logHandler = ({ message }) => {
+            if (message) {
+                ffmpegLog.push(String(message));
+                if (ffmpegLog.length > 20) ffmpegLog.shift();
+            }
+        };
         ffmpeg.on("progress", progressHandler);
+        ffmpeg.on("log", logHandler);
         try {
             await ffmpeg.writeFile(inputName, await fetchFile(file));
-            const exitCode = await ffmpeg.exec([
-                "-i", inputName, "-ss", String(startSeconds), "-t", String(clipDuration),
-                "-map", "0:v:0", "-map", "0:a?",
-                "-vf", "scale=1280:-2:force_original_aspect_ratio=decrease",
-                "-c:v", "libx264", "-preset", "ultrafast", "-crf", "30",
-                "-maxrate", "1800k", "-bufsize", "3600k",
-                "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart",
-                outputName
-            ]);
-            if (exitCode !== 0) throw new Error("The selected clip could not be created from this video format.");
+            const commonArgs = [
+                "-y", "-ss", String(startSeconds), "-i", inputName, "-t", String(clipDuration),
+                "-map", "0:v:0", "-vf", "scale=1280:-2:force_original_aspect_ratio=decrease",
+                "-threads", "1", "-pix_fmt", "yuv420p"
+            ];
+            const attempts = [
+                [...commonArgs, "-map", "0:a?", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "30", "-c:a", "aac", "-b:a", "96k", outputName],
+                [...commonArgs, "-an", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "31", outputName],
+                [...commonArgs, "-an", "-c:v", "mpeg4", "-q:v", "7", outputName]
+            ];
+            let exitCode = 1;
+            for (const args of attempts) {
+                await ffmpeg.deleteFile(outputName).catch(() => {});
+                exitCode = await ffmpeg.exec(args);
+                if (exitCode === 0) break;
+            }
+            if (exitCode !== 0) {
+                const detail = ffmpegLog.slice().reverse().find(line => /error|invalid|failed|unknown|unsupported/i.test(line));
+                throw new Error(detail ? `Video conversion failed: ${detail}` : "This video's codec is not supported by the browser trimmer. Try an MP4 (H.264) video.");
+            }
             const data = await ffmpeg.readFile(outputName);
             const trimmedFile = new File([data], `${file.name.replace(/\.[^.]+$/, "")}-clip.mp4`, { type: "video/mp4", lastModified: Date.now() });
             if (trimmedFile.size > 20 * 1024 * 1024) {
@@ -1811,6 +1829,7 @@
             return trimmedFile;
         } finally {
             ffmpeg.off("progress", progressHandler);
+            ffmpeg.off("log", logHandler);
             await ffmpeg.deleteFile(inputName).catch(() => {});
             await ffmpeg.deleteFile(outputName).catch(() => {});
             Swal.close();
