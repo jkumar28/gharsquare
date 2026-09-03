@@ -1620,39 +1620,90 @@
     async function chooseVideoClipStart(file, duration) {
         if (!window.Swal) throw new Error("Video clip selector is unavailable. Please refresh and try again.");
         const previewUrl = URL.createObjectURL(file);
-        const maximumStart = Math.max(0, Math.floor(duration - 60));
+        const maximumTime = Math.max(1, Math.floor(duration));
+        const initialEnd = Math.min(60, maximumTime);
         const result = await Swal.fire({
-            title: "Select a 1-minute clip",
+            title: "Trim video for your property",
             html: `<div class="post-video-trimmer">
                 <video src="${escapeHtml(previewUrl)}" controls preload="metadata"></video>
-                <label>Clip starts at <strong data-clip-start-label>0:00</strong></label>
-                <input type="range" min="0" max="${maximumStart}" step="1" value="0" data-clip-start>
-                <div><span>0:00</span><span>${formatClipTime(maximumStart)}</span></div>
-                <small>Your selected clip will run for 60 seconds.</small>
+                <div class="post-video-trimmer-times">
+                    <label>Start <strong data-clip-start-label>0:00</strong></label>
+                    <label>End <strong data-clip-end-label>${formatClipTime(initialEnd)}</strong></label>
+                </div>
+                <div class="post-video-trimmer-range">
+                    <input type="range" min="0" max="${maximumTime}" step="1" value="0" data-clip-start aria-label="Clip start time">
+                    <input type="range" min="1" max="${maximumTime}" step="1" value="${initialEnd}" data-clip-end aria-label="Clip end time">
+                </div>
+                <div><span>0:00</span><strong data-clip-duration>${formatClipTime(initialEnd)} selected</strong><span>${formatClipTime(maximumTime)}</span></div>
+                <small>Select any section up to 60 seconds. Drag Start or End to adjust the clip.</small>
             </div>`,
             showCancelButton: true,
-            confirmButtonText: "Use this 1-minute clip",
+            confirmButtonText: "Use selected clip",
             cancelButtonText: "Cancel video",
             confirmButtonColor: "#0f766e",
             width: 680,
             didOpen: popup => {
                 const range = popup.querySelector("[data-clip-start]");
+                const endRange = popup.querySelector("[data-clip-end]");
                 const label = popup.querySelector("[data-clip-start-label]");
+                const endLabel = popup.querySelector("[data-clip-end-label]");
+                const durationLabel = popup.querySelector("[data-clip-duration]");
                 const preview = popup.querySelector("video");
-                range.addEventListener("input", () => {
-                    label.textContent = formatClipTime(range.value);
-                    preview.currentTime = Number(range.value || 0);
+                const syncTrimRange = changed => {
+                    let start = Number(range.value || 0);
+                    let end = Number(endRange.value || 1);
+                    if (changed === "start") {
+                        if (start >= end) end = Math.min(maximumTime, start + 1);
+                        if (end - start > 60) end = start + 60;
+                    } else {
+                        if (end <= start) start = Math.max(0, end - 1);
+                        if (end - start > 60) start = end - 60;
+                    }
+                    range.value = String(start);
+                    endRange.value = String(end);
+                    label.textContent = formatClipTime(start);
+                    endLabel.textContent = formatClipTime(end);
+                    durationLabel.textContent = `${formatClipTime(end - start)} selected`;
+                    preview.dataset.clipStart = String(start);
+                    preview.dataset.clipEnd = String(end);
+                    preview.currentTime = changed === "end" ? Math.max(start, end - 1) : start;
+                };
+                range.addEventListener("input", () => syncTrimRange("start"));
+                endRange.addEventListener("input", () => syncTrimRange("end"));
+                preview.dataset.clipStart = "0";
+                preview.dataset.clipEnd = String(initialEnd);
+                preview.addEventListener("play", () => {
+                    const start = Number(preview.dataset.clipStart || 0);
+                    const end = Number(preview.dataset.clipEnd || initialEnd);
+                    if (preview.currentTime < start || preview.currentTime >= end) preview.currentTime = start;
+                });
+                preview.addEventListener("timeupdate", () => {
+                    const start = Number(preview.dataset.clipStart || 0);
+                    const end = Number(preview.dataset.clipEnd || initialEnd);
+                    if (preview.currentTime >= end) {
+                        preview.pause();
+                        preview.currentTime = start;
+                    }
                 });
             },
-            preConfirm: () => Number(document.querySelector(".swal2-popup [data-clip-start]")?.value || 0)
+            preConfirm: () => {
+                const popup = document.querySelector(".swal2-popup");
+                const start = Number(popup?.querySelector("[data-clip-start]")?.value || 0);
+                const end = Number(popup?.querySelector("[data-clip-end]")?.value || 0);
+                if (end <= start || end - start > 60) {
+                    Swal.showValidationMessage("Select a clip between 1 and 60 seconds.");
+                    return false;
+                }
+                return { start, duration: end - start };
+            }
         });
         URL.revokeObjectURL(previewUrl);
-        return result.isConfirmed ? Number(result.value || 0) : null;
+        return result.isConfirmed ? result.value : null;
     }
 
-    async function trimVideoToMinute(file, startSeconds) {
+    async function trimVideoToMinute(file, startSeconds, clipDuration) {
         Swal.fire({
-            title: "Preparing your 1-minute clip",
+            title: "Preparing your selected clip",
             html: '<p>The first use may take a moment while the secure browser trimmer loads.</p><strong data-clip-processing>Loading trimmer…</strong>',
             allowOutsideClick: false,
             allowEscapeKey: false,
@@ -1672,7 +1723,7 @@
         try {
             await ffmpeg.writeFile(inputName, await fetchFile(file));
             const exitCode = await ffmpeg.exec([
-                "-ss", String(startSeconds), "-i", inputName, "-t", "60",
+                "-ss", String(startSeconds), "-i", inputName, "-t", String(clipDuration),
                 "-map", "0:v:0", "-map", "0:a?",
                 "-vf", "scale=1280:-2:force_original_aspect_ratio=decrease",
                 "-c:v", "libx264", "-preset", "ultrafast", "-crf", "30",
@@ -1681,7 +1732,7 @@
             ]);
             if (exitCode !== 0) throw new Error("The selected clip could not be created from this video format.");
             const data = await ffmpeg.readFile(outputName);
-            return new File([data.buffer], `${file.name.replace(/\.[^.]+$/, "")}-1-minute.mp4`, { type: "video/mp4", lastModified: Date.now() });
+            return new File([data.buffer], `${file.name.replace(/\.[^.]+$/, "")}-clip.mp4`, { type: "video/mp4", lastModified: Date.now() });
         } finally {
             ffmpeg.off("progress", progressHandler);
             await ffmpeg.deleteFile(inputName).catch(() => {});
@@ -1693,9 +1744,9 @@
     async function prepareQueuedVideo(file) {
         const duration = await videoDuration(file);
         if (duration <= 60.5) return file;
-        const start = await chooseVideoClipStart(file, duration);
-        if (start === null) return null;
-        return trimVideoToMinute(file, start);
+        const selection = await chooseVideoClipStart(file, duration);
+        if (selection === null) return null;
+        return trimVideoToMinute(file, selection.start, selection.duration);
     }
 
     const mediaUploadQueues = new WeakMap();
