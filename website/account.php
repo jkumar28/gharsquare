@@ -17,6 +17,84 @@ if (!in_array($view, $allowedViews, true)) {
     $view = 'dashboard';
 }
 
+if ($view === 'settings' && isPostRequest()) {
+    $redirectToSettings = static function (): void {
+        redirect('account?view=settings');
+    };
+
+    if (!verifyCsrfToken($_POST['csrf_token'] ?? null)) {
+        setFlash('danger', 'Your session expired. Please try again.');
+        $redirectToSettings();
+    }
+
+    $action = (string) ($_POST['settings_action'] ?? '');
+    $userId = (int) ($user['id'] ?? 0);
+
+    try {
+        if ($action === 'profile') {
+            $name = trim((string) ($_POST['name'] ?? ''));
+            $phone = preg_replace('/[\s()-]+/', '', trim((string) ($_POST['phone'] ?? ''))) ?? '';
+
+            if (stringLength($name) < 2 || stringLength($name) > 150) {
+                throw new InvalidArgumentException('Enter a valid name between 2 and 150 characters.');
+            }
+            if ($phone !== '' && !preg_match('/^\+?[0-9]{10,15}$/', $phone)) {
+                throw new InvalidArgumentException('Enter a valid phone number with 10 to 15 digits.');
+            }
+
+            $duplicate = db()->prepare('SELECT COUNT(*) FROM users WHERE phone = :phone AND id != :id');
+            $duplicate->execute([':phone' => $phone !== '' ? $phone : null, ':id' => $userId]);
+            if ($phone !== '' && (int) $duplicate->fetchColumn() > 0) {
+                throw new InvalidArgumentException('This phone number is already linked to another account.');
+            }
+
+            $stmt = db()->prepare('UPDATE users SET name = :name, phone = :phone WHERE id = :id');
+            $stmt->execute([':name' => $name, ':phone' => $phone !== '' ? $phone : null, ':id' => $userId]);
+            $_SESSION['user']['name'] = $name;
+            $_SESSION['user']['phone'] = $phone;
+            setFlash('success', 'Profile details updated successfully.');
+        } elseif ($action === 'preferences') {
+            savePublicUserSettings($userId, $_POST);
+            setFlash('success', 'Your preferences have been saved.');
+        } elseif ($action === 'password') {
+            $current = (string) ($_POST['current_password'] ?? '');
+            $new = (string) ($_POST['new_password'] ?? '');
+            $confirm = (string) ($_POST['confirm_password'] ?? '');
+            $stmt = db()->prepare('SELECT password FROM users WHERE id = :id LIMIT 1');
+            $stmt->execute([':id' => $userId]);
+            $hash = (string) $stmt->fetchColumn();
+
+            if ($current === '' || !password_verify($current, $hash)) {
+                throw new InvalidArgumentException('Current password is incorrect.');
+            }
+            if (stringLength($new) < 8) {
+                throw new InvalidArgumentException('New password must contain at least 8 characters.');
+            }
+            if ($new !== $confirm) {
+                throw new InvalidArgumentException('New password and confirmation do not match.');
+            }
+            if (password_verify($new, $hash)) {
+                throw new InvalidArgumentException('Choose a password different from your current password.');
+            }
+
+            $stmt = db()->prepare('UPDATE users SET password = :password WHERE id = :id');
+            $stmt->execute([':password' => password_hash($new, PASSWORD_DEFAULT), ':id' => $userId]);
+            session_regenerate_id(true);
+            setFlash('success', 'Password changed successfully.');
+        } else {
+            throw new InvalidArgumentException('Invalid settings request.');
+        }
+    } catch (Throwable $exception) {
+        setFlash('danger', $exception instanceof InvalidArgumentException
+            ? $exception->getMessage()
+            : 'Unable to save settings right now. Please try again.');
+    }
+
+    $redirectToSettings();
+}
+
+$settings = publicUserSettings((int) ($user['id'] ?? 0));
+
 $activity = publicUserRecentActivity(40);
 $savedProperties = publicUserSavedProperties(60);
 $enquiries = publicUserEnquiries(60);
@@ -277,10 +355,58 @@ $nav = [
                         </div>
                     </div>
                 <?php elseif ($view === 'settings'): ?>
-                    <div class="account-panel">
-                        <h3>Settings</h3>
-                        <p class="account-muted">Notification preferences, password change, saved search alerts, and privacy controls will live here.</p>
+                    <div class="settings-intro">
+                        <span class="settings-intro-icon"><i class="bi bi-sliders"></i></span>
+                        <div><h3>Account settings</h3><p>Keep your contact details, alerts and account security up to date.</p></div>
                     </div>
+
+                    <form class="account-panel settings-card" method="post" action="account?view=settings">
+                        <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
+                        <input type="hidden" name="settings_action" value="profile">
+                        <div class="settings-card-heading"><span><i class="bi bi-person"></i></span><div><h3>Personal details</h3><p>Used for your account and property enquiries.</p></div></div>
+                        <div class="settings-form-grid">
+                            <label><span>Full name</span><input type="text" name="name" value="<?= e((string) ($user['name'] ?? '')) ?>" maxlength="150" required></label>
+                            <label><span>Phone number</span><input type="tel" name="phone" value="<?= e((string) ($user['phone'] ?? '')) ?>" inputmode="tel" placeholder="e.g. 9876543210"></label>
+                            <label class="settings-field-wide"><span>Email address</span><div class="settings-readonly"><span><?= e((string) ($user['email'] ?? '')) ?></span><?php if (!empty($user['email_verified'])): ?><em><i class="bi bi-patch-check-fill"></i> Verified</em><?php endif; ?></div><small>Email changes require verification and are handled by support.</small></label>
+                        </div>
+                        <div class="settings-form-actions"><button type="submit">Save profile</button></div>
+                    </form>
+
+                    <form class="account-panel settings-card" method="post" action="account?view=settings">
+                        <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
+                        <input type="hidden" name="settings_action" value="preferences">
+                        <div class="settings-card-heading"><span><i class="bi bi-bell"></i></span><div><h3>Alerts & privacy</h3><p>Choose how GharSquare keeps you informed.</p></div></div>
+                        <fieldset class="settings-contact-choice"><legend>Preferred contact method</legend><div>
+                            <?php foreach (['call' => ['bi-telephone', 'Call'], 'whatsapp' => ['bi-whatsapp', 'WhatsApp'], 'email' => ['bi-envelope', 'Email']] as $key => [$icon, $label]): ?>
+                                <label><input type="radio" name="preferred_contact" value="<?= e($key) ?>" <?= ($settings['preferred_contact'] ?? 'call') === $key ? 'checked' : '' ?>><span><i class="bi <?= e($icon) ?>"></i><?= e($label) ?></span></label>
+                            <?php endforeach; ?>
+                        </div></fieldset>
+                        <div class="settings-toggle-list">
+                            <?php foreach ([
+                                'enquiry_updates' => ['Enquiry updates', 'Replies and status changes for enquiries you send.', 'bi-chat-left-text'],
+                                'listing_updates' => ['Property updates', 'Important updates for your posted properties.', 'bi-house-check'],
+                                'saved_search_alerts' => ['Saved search alerts', 'Notify me when matching properties become available.', 'bi-search-heart'],
+                                'marketing_updates' => ['Offers & tips', 'Occasional product news, market insights and offers.', 'bi-megaphone'],
+                                'activity_personalization' => ['Personalised experience', 'Use browsing activity to improve recommendations.', 'bi-stars'],
+                            ] as $key => [$title, $description, $icon]): ?>
+                                <label class="settings-toggle-row"><i class="bi <?= e($icon) ?>"></i><span><strong><?= e($title) ?></strong><small><?= e($description) ?></small></span><input type="checkbox" name="<?= e($key) ?>" value="1" <?= !empty($settings[$key]) ? 'checked' : '' ?>><em aria-hidden="true"></em></label>
+                            <?php endforeach; ?>
+                        </div>
+                        <div class="settings-form-actions"><button type="submit">Save preferences</button></div>
+                    </form>
+
+                    <form class="account-panel settings-card" method="post" action="account?view=settings">
+                        <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
+                        <input type="hidden" name="settings_action" value="password">
+                        <div class="settings-card-heading"><span><i class="bi bi-shield-lock"></i></span><div><h3>Password & security</h3><p>Use at least 8 characters and never reuse an old password.</p></div></div>
+                        <div class="settings-form-grid settings-password-grid">
+                            <label><span>Current password</span><span class="password-input-wrap"><input type="password" name="current_password" autocomplete="current-password" required><button type="button" data-password-toggle aria-label="Show password"><i class="bi bi-eye"></i></button></span></label>
+                            <label><span>New password</span><span class="password-input-wrap"><input type="password" name="new_password" minlength="8" autocomplete="new-password" required><button type="button" data-password-toggle aria-label="Show password"><i class="bi bi-eye"></i></button></span></label>
+                            <label><span>Confirm new password</span><span class="password-input-wrap"><input type="password" name="confirm_password" minlength="8" autocomplete="new-password" required><button type="button" data-password-toggle aria-label="Show password"><i class="bi bi-eye"></i></button></span></label>
+                        </div>
+                        <div class="settings-security-note"><i class="bi bi-shield-check"></i><span><strong>Your account is protected</strong><small>Changing your password refreshes your secure login session.</small></span></div>
+                        <div class="settings-form-actions"><a href="logout"><i class="bi bi-box-arrow-right"></i> Log out</a><button type="submit">Change password</button></div>
+                    </form>
                 <?php elseif ($view === 'properties'): ?>
                     <div class="account-panel">
                         <h3>My Properties</h3>

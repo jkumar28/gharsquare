@@ -451,6 +451,20 @@ CREATE TABLE `users` (
   KEY `idx_users_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `user_settings`;
+CREATE TABLE `user_settings` (
+  `user_id` bigint(20) unsigned NOT NULL,
+  `preferred_contact` enum('call','email','whatsapp') NOT NULL DEFAULT 'call',
+  `enquiry_updates` tinyint(1) NOT NULL DEFAULT 1,
+  `listing_updates` tinyint(1) NOT NULL DEFAULT 1,
+  `saved_search_alerts` tinyint(1) NOT NULL DEFAULT 0,
+  `marketing_updates` tinyint(1) NOT NULL DEFAULT 0,
+  `activity_personalization` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`user_id`),
+  CONSTRAINT `fk_user_settings_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

@@ -415,6 +415,66 @@ function publicAuthUserPayload(): ?array
     ];
 }
 
+function publicUserSettings(int $userId): array
+{
+    $defaults = [
+        'preferred_contact' => 'call',
+        'enquiry_updates' => 1,
+        'listing_updates' => 1,
+        'saved_search_alerts' => 0,
+        'marketing_updates' => 0,
+        'activity_personalization' => 1,
+    ];
+
+    if ($userId < 1 || !tableExists('user_settings')) {
+        return $defaults;
+    }
+
+    $stmt = db()->prepare('SELECT preferred_contact, enquiry_updates, listing_updates,
+                                  saved_search_alerts, marketing_updates, activity_personalization
+                           FROM user_settings WHERE user_id = :user_id LIMIT 1');
+    $stmt->execute([':user_id' => $userId]);
+    $settings = $stmt->fetch();
+
+    return $settings ? array_merge($defaults, $settings) : $defaults;
+}
+
+function savePublicUserSettings(int $userId, array $input): void
+{
+    if (!tableExists('user_settings')) {
+        throw new RuntimeException('Settings storage is not installed. Please run the latest database migration.');
+    }
+
+    $contact = (string) ($input['preferred_contact'] ?? 'call');
+    if (!in_array($contact, ['call', 'email', 'whatsapp'], true)) {
+        $contact = 'call';
+    }
+
+    $value = static fn (string $key): int => isset($input[$key]) ? 1 : 0;
+    $stmt = db()->prepare(
+        'INSERT INTO user_settings
+            (user_id, preferred_contact, enquiry_updates, listing_updates, saved_search_alerts,
+             marketing_updates, activity_personalization, updated_at)
+         VALUES
+            (:user_id, :preferred_contact, :enquiry_updates, :listing_updates, :saved_search_alerts,
+             :marketing_updates, :activity_personalization, NOW())
+         ON DUPLICATE KEY UPDATE
+            preferred_contact = VALUES(preferred_contact), enquiry_updates = VALUES(enquiry_updates),
+            listing_updates = VALUES(listing_updates), saved_search_alerts = VALUES(saved_search_alerts),
+            marketing_updates = VALUES(marketing_updates), activity_personalization = VALUES(activity_personalization),
+            updated_at = NOW()'
+    );
+    $stmt->execute([
+        ':user_id' => $userId,
+        ':preferred_contact' => $contact,
+        ':enquiry_updates' => $value('enquiry_updates'),
+        ':listing_updates' => $value('listing_updates'),
+        ':saved_search_alerts' => $value('saved_search_alerts'),
+        ':marketing_updates' => $value('marketing_updates'),
+        ':activity_personalization' => $value('activity_personalization'),
+    ]);
+}
+
 function publicAuthInitials(string $name): string
 {
     $parts = preg_split('/\\s+/', trim($name)) ?: [];

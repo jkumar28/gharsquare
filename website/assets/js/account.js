@@ -64,6 +64,17 @@
 
             if (button) {
                 removeSavedProperty(button);
+                return;
+            }
+
+            const passwordToggle = event.target.closest("[data-password-toggle]");
+            if (passwordToggle) {
+                const input = passwordToggle.closest(".password-input-wrap")?.querySelector("input");
+                if (!input) return;
+                const reveal = input.type === "password";
+                input.type = reveal ? "text" : "password";
+                passwordToggle.setAttribute("aria-label", reveal ? "Hide password" : "Show password");
+                passwordToggle.innerHTML = `<i class="bi ${reveal ? "bi-eye-slash" : "bi-eye"}"></i>`;
             }
         });
     });
