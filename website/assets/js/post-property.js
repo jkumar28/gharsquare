@@ -1633,10 +1633,9 @@
             document.head.appendChild(script);
         });
 
-        videoTrimmerLoader = loadScript(`${videoTrimmerAssetBase}ffmpeg.js`, "FFmpegWASM").then(async ffmpegPackage => {
+        videoTrimmerLoader = loadScript(`${videoTrimmerAssetBase}ffmpeg.js?v=0.12.15`, "FFmpegWASM").then(async ffmpegPackage => {
             const ffmpeg = new ffmpegPackage.FFmpeg();
             await ffmpeg.load({
-                classWorkerURL: `${videoTrimmerAssetBase}814.ffmpeg.js`,
                 coreURL: `${videoTrimmerAssetBase}ffmpeg-core.js`,
                 wasmURL: `${videoTrimmerAssetBase}ffmpeg-core.wasm`
             });
@@ -1646,7 +1645,8 @@
             };
         }).catch(error => {
             videoTrimmerLoader = null;
-            throw new Error(`Video trimmer could not start (${error.message || "runtime unavailable"}). Refresh once and try again.`);
+            const detail = error?.message || error?.error?.message || error?.reason?.message || String(error || "runtime unavailable");
+            throw new Error(`Video trimmer could not start (${detail}).`);
         });
         return videoTrimmerLoader;
     }
