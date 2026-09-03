@@ -286,6 +286,18 @@ $structuredData = [
                     </div>
                 <?php endif; ?>
 
+                <?php if ($videos !== []): ?>
+                    <div class="details-mobile-video">
+                        <div class="details-mobile-video-label"><i class="bi bi-play-circle-fill"></i><span>Property video</span></div>
+                        <?php $mobileVideo = $videos[0]; ?>
+                        <?php if (str_contains((string) $mobileVideo['file_url'], 'youtube.com') || str_contains((string) $mobileVideo['file_url'], 'youtu.be')): ?>
+                            <a href="<?= e((string) $mobileVideo['file_url']) ?>" target="_blank" rel="noopener" class="details-mobile-youtube"><i class="bi bi-youtube"></i><span>Watch property video</span></a>
+                        <?php else: ?>
+                            <video controls playsinline preload="metadata"<?= ($property['primary_image'] ?? '') !== '' ? ' poster="' . e((string) $property['primary_image']) . '"' : '' ?>><source src="<?= e((string) $mobileVideo['file_url']) ?>" type="<?= e((string) ($mobileVideo['mime_type'] ?? 'video/mp4')) ?>"></video>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+
                 <div class="details-summary-panel">
                     <?php if ($listingLabel !== '' || $propertyType !== ''): ?>
                         <div class="summary-badges">
@@ -420,7 +432,7 @@ $structuredData = [
                     <?php endif; ?>
 
                     <?php if ($videos !== []): ?>
-                        <section class="detail-panel">
+                        <section class="detail-panel property-video-panel" id="propertyVideos">
                             <div class="detail-section-heading"><h2>Property Videos</h2></div>
                             <div class="property-video-grid">
                                 <?php foreach ($videos as $video): ?>
@@ -536,5 +548,9 @@ $structuredData = [
             </div>
         </div>
     </section>
+    <div class="mobile-detail-actionbar">
+        <button type="button" class="mobile-detail-save <?= $isSaved ? 'active' : '' ?>" data-detail-save aria-label="Save property"><i class="bi <?= $isSaved ? 'bi-heart-fill' : 'bi-heart' ?>"></i><span>Save</span></button>
+        <button type="button" class="mobile-detail-enquire" data-scroll-enquiry><i class="bi bi-chat-left-text"></i><span>Enquire now</span></button>
+    </div>
 </main>
 <?php websiteFooter(['scripts' => ['property-details-live.js']]); ?>

@@ -76,7 +76,8 @@
         return Promise.resolve();
     }
 
-    document.querySelector("[data-detail-save]")?.addEventListener("click", function (event) {
+    document.querySelectorAll("[data-detail-save]").forEach(function (saveButton) {
+        saveButton.addEventListener("click", function (event) {
         const button = event.currentTarget;
         const shouldSave = !button.classList.contains("active");
         postJson("saved-property", {
@@ -84,13 +85,33 @@
             source: "property_details"
         }).then(function (data) {
             if (!data) return;
-            button.classList.toggle("active", !!data.saved);
-            button.innerHTML = `<i class="bi ${data.saved ? "bi-heart-fill" : "bi-heart"}"></i>`;
+            document.querySelectorAll("[data-detail-save]").forEach(function (item) {
+                item.classList.toggle("active", !!data.saved);
+                const icon = item.querySelector("i");
+                if (icon) icon.className = `bi ${data.saved ? "bi-heart-fill" : "bi-heart"}`;
+            });
             notice("success", data.saved ? "Property saved" : "Removed from saved", data.message || "");
         }).catch(function (error) {
             notice("error", "Could not update property", error.message);
         });
+        });
     });
+
+    const mainPhoto = document.querySelector(".main-photo");
+    if (mainPhoto && gallery.length > 1) {
+        let touchStartX = 0;
+        mainPhoto.addEventListener("touchstart", function (event) {
+            touchStartX = event.changedTouches[0]?.clientX || 0;
+        }, { passive: true });
+        mainPhoto.addEventListener("touchend", function (event) {
+            const distance = (event.changedTouches[0]?.clientX || 0) - touchStartX;
+            if (Math.abs(distance) < 45) return;
+            galleryIndex = distance < 0
+                ? (galleryIndex + 1) % gallery.length
+                : (galleryIndex - 1 + gallery.length) % gallery.length;
+            renderGallery();
+        }, { passive: true });
+    }
 
     document.querySelector("[data-property-enquiry-form]")?.addEventListener("submit", function (event) {
         event.preventDefault();
