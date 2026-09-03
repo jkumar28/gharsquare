@@ -6274,6 +6274,7 @@ footer a:hover {
         flex-direction: row;
         flex-wrap: nowrap;
         min-height: 56px;
+        overflow: hidden;
         padding: 6px 7px 6px 16px;
         border: 1px solid #e3e7ed;
         border-radius: 15px;
@@ -6281,6 +6282,8 @@ footer a:hover {
     }
 
     .search-bar input {
+        flex: 1 1 0;
+        width: 0;
         min-width: 0;
         height: 42px;
         padding-inline: 10px;
