@@ -1795,7 +1795,8 @@
         const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
         const extension = (file.name.split(".").pop() || "mp4").replace(/[^a-z0-9]/gi, "").toLowerCase();
         const inputName = `input-${token}.${extension || "mp4"}`;
-        const outputName = `clip-${token}.mp4`;
+        const mp4OutputName = `clip-${token}.mp4`;
+        const webmOutputName = `clip-${token}.webm`;
         const progressHandler = ({ progress }) => {
             const target = document.querySelector(".swal2-popup [data-clip-processing]");
             if (target) target.textContent = `Preparing clip… ${Math.max(0, Math.min(100, Math.round(Number(progress || 0) * 100)))}%`;
@@ -1817,28 +1818,50 @@
                 "-threads", "1", "-pix_fmt", "yuv420p"
             ];
             const attempts = [
-                [...commonArgs, "-map", "0:a?", "-c:v", "libx264", "-preset", "ultrafast", "-b:v", "1200k", "-maxrate", "1400k", "-bufsize", "2800k", "-c:a", "aac", "-b:a", "80k", outputName],
-                [...commonArgs, "-an", "-c:v", "libx264", "-preset", "ultrafast", "-b:v", "1200k", "-maxrate", "1400k", "-bufsize", "2800k", outputName],
-                [...commonArgs, "-an", "-c:v", "mpeg4", "-b:v", "1200k", outputName]
+                {
+                    output: mp4OutputName,
+                    extension: "mp4",
+                    mime: "video/mp4",
+                    args: [...commonArgs, "-map", "0:a?", "-c:v", "libx264", "-preset", "ultrafast", "-b:v", "1200k", "-maxrate", "1400k", "-bufsize", "2800k", "-c:a", "aac", "-b:a", "80k", "-movflags", "+faststart", mp4OutputName]
+                },
+                {
+                    output: mp4OutputName,
+                    extension: "mp4",
+                    mime: "video/mp4",
+                    args: [...commonArgs, "-an", "-c:v", "libx264", "-preset", "ultrafast", "-b:v", "1200k", "-maxrate", "1400k", "-bufsize", "2800k", "-movflags", "+faststart", mp4OutputName]
+                },
+                {
+                    output: webmOutputName,
+                    extension: "webm",
+                    mime: "video/webm",
+                    args: [...commonArgs, "-an", "-c:v", "libvpx-vp9", "-deadline", "realtime", "-cpu-used", "8", "-b:v", "1200k", webmOutputName]
+                }
             ];
-            let exitCode = 1;
-            for (const args of attempts) {
-                await ffmpeg.deleteFile(outputName).catch(() => {});
-                exitCode = await ffmpeg.exec(args);
-                if (exitCode === 0) break;
+            for (const attempt of attempts) {
+                await ffmpeg.deleteFile(attempt.output).catch(() => {});
+                const exitCode = await ffmpeg.exec(attempt.args);
+                if (exitCode !== 0) continue;
+                const data = await ffmpeg.readFile(attempt.output);
+                const trimmedFile = new File(
+                    [data],
+                    `${file.name.replace(/\.[^.]+$/, "")}-clip.${attempt.extension}`,
+                    { type: attempt.mime, lastModified: Date.now() }
+                );
+                try {
+                    const preparedDuration = await videoDuration(trimmedFile);
+                    if (preparedDuration >= 14.5 && preparedDuration <= 60.5) return trimmedFile;
+                } catch (_) {
+                    // Try the next browser-compatible output container.
+                }
             }
-            if (exitCode !== 0) {
-                const detail = ffmpegLog.slice().reverse().find(line => /error|invalid|failed|unknown|unsupported/i.test(line));
-                throw new Error(detail ? `Video conversion failed: ${detail}` : "This video's codec is not supported by the browser trimmer. Try an MP4 (H.264) video.");
-            }
-            const data = await ffmpeg.readFile(outputName);
-            const trimmedFile = new File([data], `${file.name.replace(/\.[^.]+$/, "")}-clip.mp4`, { type: "video/mp4", lastModified: Date.now() });
-            return trimmedFile;
+            const detail = ffmpegLog.slice().reverse().find(line => /error|invalid|failed|unknown|unsupported/i.test(line));
+            throw new Error(detail ? `Video conversion failed: ${detail}` : "This video's codec could not be converted to a browser-compatible clip.");
         } finally {
             ffmpeg.off("progress", progressHandler);
             ffmpeg.off("log", logHandler);
             await ffmpeg.deleteFile(inputName).catch(() => {});
-            await ffmpeg.deleteFile(outputName).catch(() => {});
+            await ffmpeg.deleteFile(mp4OutputName).catch(() => {});
+            await ffmpeg.deleteFile(webmOutputName).catch(() => {});
             Swal.close();
         }
     }
