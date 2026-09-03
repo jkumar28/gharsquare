@@ -1632,7 +1632,7 @@
 
     function queueFor(form) {
         if (!mediaUploadQueues.has(form)) {
-            mediaUploadQueues.set(form, { items: [], uploading: false });
+            mediaUploadQueues.set(form, { items: [], uploading: false, autoStartTimer: null });
         }
         return mediaUploadQueues.get(form);
     }
@@ -1665,9 +1665,9 @@
         const queue = queueFor(form);
         const container = form.querySelector("[data-media-file-queue]");
         const startButton = form.querySelector("[data-media-queue-start]");
-        if (!container || !startButton) return;
+        if (!container) return;
         container.innerHTML = queue.items.map(mediaQueueItemHtml).join("");
-        startButton.hidden = queue.uploading || !queue.items.some(item => item.status === "pending");
+        if (startButton) startButton.hidden = true;
     }
 
     function updateMediaQueueItem(form, item) {
@@ -1718,6 +1718,15 @@
             });
         });
         refreshMediaQueue(form);
+    }
+
+    function scheduleMediaQueueStart(form, delay = 900) {
+        const queue = queueFor(form);
+        if (queue.autoStartTimer) window.clearTimeout(queue.autoStartTimer);
+        queue.autoStartTimer = window.setTimeout(() => {
+            queue.autoStartTimer = null;
+            startMediaQueue(form).catch(() => {});
+        }, delay);
     }
 
     function singleMediaFormData(form, file, kind) {
@@ -1792,6 +1801,9 @@
             title: completed === pending.length ? "Upload complete" : "Upload queue finished",
             text: `${completed} of ${pending.length} file${pending.length === 1 ? "" : "s"} uploaded successfully.`
         });
+        if (queue.items.some(item => item.status === "pending")) {
+            scheduleMediaQueueStart(form, 250);
+        }
     }
 
     function setMediaUploadState(form, active, percent = 0, message = "Uploading...") {
@@ -2173,6 +2185,7 @@
                 if (input.files && input.files.length > 0) {
                     addFilesToMediaQueue(form, input.files);
                     input.value = "";
+                    scheduleMediaQueueStart(form);
                 }
             });
         });
@@ -2196,6 +2209,7 @@
                     item.message = `${formatFileSize(item.file.size)} • Rotation ${item.rotation || 0}° • ready`;
                     updateMediaQueueItem(form, item);
                     refreshMediaQueue(form);
+                    scheduleMediaQueueStart(form);
                 }
                 if (removeButton && !["uploading", "processing", "complete"].includes(item.status)) {
                     URL.revokeObjectURL(item.previewUrl);
@@ -2231,6 +2245,7 @@
             const form = dropzone.closest("form");
             if (!input || !form || !event.dataTransfer?.files?.length) return;
             addFilesToMediaQueue(form, event.dataTransfer.files);
+            scheduleMediaQueueStart(form);
         });
     });
 
