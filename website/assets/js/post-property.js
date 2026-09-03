@@ -1554,6 +1554,11 @@
         const minSeconds = 14.5;
         const maxSeconds = 60.5;
         return Promise.all(Array.from(files || []).map(file => new Promise((resolve, reject) => {
+            const preparedDuration = Number(file._preparedClipDuration || 0);
+            if (preparedDuration >= minSeconds && preparedDuration <= maxSeconds) {
+                resolve(true);
+                return;
+            }
             const video = document.createElement("video");
             video.preload = "metadata";
             video.onloadedmetadata = function () {
@@ -1574,6 +1579,82 @@
             };
             video.src = URL.createObjectURL(file);
         })));
+    }
+
+    async function recordBrowserCompatibleClip(file, startSeconds, clipDuration) {
+        if (typeof MediaRecorder !== "function") throw new Error("Native browser video encoder is unavailable.");
+        const supportedMime = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm;codecs=vp8", "video/webm"]
+            .find(type => MediaRecorder.isTypeSupported(type));
+        if (!supportedMime) throw new Error("Native browser video encoding is unavailable.");
+
+        const sourceUrl = URL.createObjectURL(file);
+        const video = document.createElement("video");
+        video.src = sourceUrl;
+        video.preload = "auto";
+        video.playsInline = true;
+        video.muted = true;
+        await new Promise((resolve, reject) => {
+            video.onloadedmetadata = resolve;
+            video.onerror = () => reject(new Error("Browser could not decode this video."));
+        });
+
+        const scale = Math.min(1, 960 / Math.max(video.videoWidth || 1, video.videoHeight || 1));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(2, Math.floor((video.videoWidth * scale) / 2) * 2);
+        canvas.height = Math.max(2, Math.floor((video.videoHeight * scale) / 2) * 2);
+        const context = canvas.getContext("2d", { alpha: false });
+        const outputStream = canvas.captureStream(24);
+        const sourceStream = typeof video.captureStream === "function" ? video.captureStream() : null;
+        sourceStream?.getAudioTracks().forEach(track => outputStream.addTrack(track));
+        const chunks = [];
+        const recorder = new MediaRecorder(outputStream, { mimeType: supportedMime, videoBitsPerSecond: 1200000, audioBitsPerSecond: 80000 });
+        recorder.ondataavailable = event => { if (event.data?.size) chunks.push(event.data); };
+
+        try {
+            const seekTarget = Math.max(0, startSeconds);
+            if (Math.abs(video.currentTime - seekTarget) > 0.05) {
+                video.currentTime = seekTarget;
+                await new Promise(resolve => video.addEventListener("seeked", resolve, { once: true }));
+            }
+            const recorded = new Promise((resolve, reject) => {
+                recorder.onstop = resolve;
+                recorder.onerror = event => reject(event.error || new Error("Native video encoding failed."));
+            });
+            let animationFrame = 0;
+            const drawFrame = () => {
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                animationFrame = requestAnimationFrame(drawFrame);
+            };
+            drawFrame();
+            recorder.start(500);
+            await video.play();
+            const startedAt = performance.now();
+            await new Promise(resolve => {
+                const timer = window.setInterval(() => {
+                    const elapsed = (performance.now() - startedAt) / 1000;
+                    const target = document.querySelector(".swal2-popup [data-clip-processing]");
+                    if (target) target.textContent = `Preparing compatible clip… ${Math.min(100, Math.round((elapsed / clipDuration) * 100))}%`;
+                    if (elapsed >= clipDuration || video.ended) {
+                        window.clearInterval(timer);
+                        resolve();
+                    }
+                }, 100);
+            });
+            video.pause();
+            cancelAnimationFrame(animationFrame);
+            if (recorder.state !== "inactive") recorder.stop();
+            await recorded;
+            const output = new File(chunks, `${file.name.replace(/\.[^.]+$/, "")}-clip.webm`, { type: "video/webm", lastModified: Date.now() });
+            Object.defineProperty(output, "_preparedClipDuration", { value: clipDuration });
+            return output;
+        } finally {
+            if (recorder.state !== "inactive") recorder.stop();
+            outputStream.getTracks().forEach(track => track.stop());
+            sourceStream?.getTracks().forEach(track => track.stop());
+            video.removeAttribute("src");
+            video.load();
+            URL.revokeObjectURL(sourceUrl);
+        }
     }
 
     function videoDuration(file) {
@@ -1854,8 +1935,7 @@
                     // Try the next browser-compatible output container.
                 }
             }
-            const detail = ffmpegLog.slice().reverse().find(line => /error|invalid|failed|unknown|unsupported/i.test(line));
-            throw new Error(detail ? `Video conversion failed: ${detail}` : "This video's codec could not be converted to a browser-compatible clip.");
+            return await recordBrowserCompatibleClip(file, startSeconds, clipDuration);
         } finally {
             ffmpeg.off("progress", progressHandler);
             ffmpeg.off("log", logHandler);
