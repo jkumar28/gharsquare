@@ -36,6 +36,22 @@
         return document.getElementById(id);
     }
 
+    function initFullClickDatePickers() {
+        document.querySelectorAll('input[type="date"]').forEach(input => {
+            input.style.cursor = "pointer";
+            input.addEventListener("click", () => {
+                input.focus({ preventScroll: true });
+                if (typeof input.showPicker === "function") {
+                    try {
+                        input.showPicker();
+                    } catch (error) {
+                        // Native icon/default interaction remains available as fallback.
+                    }
+                }
+            });
+        });
+    }
+
     function setStatus(text, tone) {
         if (!saveStatus) return;
         saveStatus.textContent = text;
@@ -2283,6 +2299,7 @@
     });
 
     syncPropertyTypes();
+    initFullClickDatePickers();
     syncCategoryFromType();
     syncLocationSelects(config.selected || {});
     syncSmartContext();
