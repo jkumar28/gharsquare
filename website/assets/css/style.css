@@ -2702,6 +2702,40 @@ footer a {
 
 .post-media-queue-start[hidden] { display: none; }
 
+.post-video-trimmer video {
+    display: block;
+    width: 100%;
+    max-height: 340px;
+    margin-bottom: 16px;
+    border-radius: 12px;
+    background: #0f172a;
+}
+
+.post-video-trimmer label {
+    display: block;
+    margin-bottom: 8px;
+    text-align: left;
+    color: #334155;
+}
+
+.post-video-trimmer input[type="range"] {
+    width: 100%;
+    accent-color: var(--teal);
+}
+
+.post-video-trimmer > div {
+    display: flex;
+    justify-content: space-between;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.post-video-trimmer small {
+    display: block;
+    margin-top: 12px;
+    color: #64748b;
+}
+
 .post-media-upload-form.is-uploading {
     position: relative;
     pointer-events: none;

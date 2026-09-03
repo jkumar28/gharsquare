@@ -22,6 +22,7 @@
     let saveTimer = null;
     let googleMapsLoader = null;
     let descriptionTemplatesLoaded = false;
+    let videoTrimmerLoader = null;
 
     function escapeHtml(value) {
         return String(value || "")
@@ -1537,7 +1538,7 @@
 
     function validateVideoFiles(files) {
         const maxBytes = 20 * 1024 * 1024;
-        const maxSeconds = 60;
+        const maxSeconds = 60.5;
         return Promise.all(Array.from(files || []).map(file => new Promise((resolve, reject) => {
             if (file.size > maxBytes) {
                 reject(new Error(`${file.name} is larger than 20 MB.`));
@@ -1559,6 +1560,142 @@
             };
             video.src = URL.createObjectURL(file);
         })));
+    }
+
+    function videoDuration(file) {
+        return new Promise((resolve, reject) => {
+            const video = document.createElement("video");
+            const url = URL.createObjectURL(file);
+            video.preload = "metadata";
+            video.onloadedmetadata = () => {
+                const duration = Number(video.duration || 0);
+                URL.revokeObjectURL(url);
+                duration > 0 ? resolve(duration) : reject(new Error(`Unable to read ${file.name} duration.`));
+            };
+            video.onerror = () => {
+                URL.revokeObjectURL(url);
+                reject(new Error(`Unable to read ${file.name}.`));
+            };
+            video.src = url;
+        });
+    }
+
+    function formatClipTime(seconds) {
+        const value = Math.max(0, Math.floor(Number(seconds) || 0));
+        return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, "0")}`;
+    }
+
+    function loadBrowserVideoTrimmer() {
+        if (videoTrimmerLoader) return videoTrimmerLoader;
+        const loadScript = (url, globalName) => new Promise((resolve, reject) => {
+            if (window[globalName]) return resolve(window[globalName]);
+            const script = document.createElement("script");
+            script.src = url;
+            script.crossOrigin = "anonymous";
+            script.onload = () => window[globalName] ? resolve(window[globalName]) : reject(new Error("Video trimmer failed to initialize."));
+            script.onerror = () => reject(new Error("Unable to load the video trimmer. Check your internet connection."));
+            document.head.appendChild(script);
+        });
+
+        videoTrimmerLoader = Promise.all([
+            loadScript("https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.js", "FFmpegWASM"),
+            loadScript("https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/umd/index.js", "FFmpegUtil")
+        ]).then(async ([ffmpegPackage, utilPackage]) => {
+            const ffmpeg = new ffmpegPackage.FFmpeg();
+            const coreBase = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
+            const ffmpegBase = "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/umd";
+            await ffmpeg.load({
+                classWorkerURL: await utilPackage.toBlobURL(`${ffmpegBase}/814.ffmpeg.js`, "text/javascript"),
+                coreURL: await utilPackage.toBlobURL(`${coreBase}/ffmpeg-core.js`, "text/javascript"),
+                wasmURL: await utilPackage.toBlobURL(`${coreBase}/ffmpeg-core.wasm`, "application/wasm")
+            });
+            return { ffmpeg, fetchFile: utilPackage.fetchFile };
+        }).catch(error => {
+            videoTrimmerLoader = null;
+            throw error;
+        });
+        return videoTrimmerLoader;
+    }
+
+    async function chooseVideoClipStart(file, duration) {
+        if (!window.Swal) throw new Error("Video clip selector is unavailable. Please refresh and try again.");
+        const previewUrl = URL.createObjectURL(file);
+        const maximumStart = Math.max(0, Math.floor(duration - 60));
+        const result = await Swal.fire({
+            title: "Select a 1-minute clip",
+            html: `<div class="post-video-trimmer">
+                <video src="${escapeHtml(previewUrl)}" controls preload="metadata"></video>
+                <label>Clip starts at <strong data-clip-start-label>0:00</strong></label>
+                <input type="range" min="0" max="${maximumStart}" step="1" value="0" data-clip-start>
+                <div><span>0:00</span><span>${formatClipTime(maximumStart)}</span></div>
+                <small>Your selected clip will run for 60 seconds.</small>
+            </div>`,
+            showCancelButton: true,
+            confirmButtonText: "Use this 1-minute clip",
+            cancelButtonText: "Cancel video",
+            confirmButtonColor: "#0f766e",
+            width: 680,
+            didOpen: popup => {
+                const range = popup.querySelector("[data-clip-start]");
+                const label = popup.querySelector("[data-clip-start-label]");
+                const preview = popup.querySelector("video");
+                range.addEventListener("input", () => {
+                    label.textContent = formatClipTime(range.value);
+                    preview.currentTime = Number(range.value || 0);
+                });
+            },
+            preConfirm: () => Number(document.querySelector(".swal2-popup [data-clip-start]")?.value || 0)
+        });
+        URL.revokeObjectURL(previewUrl);
+        return result.isConfirmed ? Number(result.value || 0) : null;
+    }
+
+    async function trimVideoToMinute(file, startSeconds) {
+        Swal.fire({
+            title: "Preparing your 1-minute clip",
+            html: '<p>The first use may take a moment while the secure browser trimmer loads.</p><strong data-clip-processing>Loading trimmer…</strong>',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => Swal.showLoading()
+        });
+        const { ffmpeg, fetchFile } = await loadBrowserVideoTrimmer();
+        const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const extension = (file.name.split(".").pop() || "mp4").replace(/[^a-z0-9]/gi, "").toLowerCase();
+        const inputName = `input-${token}.${extension || "mp4"}`;
+        const outputName = `clip-${token}.mp4`;
+        const progressHandler = ({ progress }) => {
+            const target = document.querySelector(".swal2-popup [data-clip-processing]");
+            if (target) target.textContent = `Preparing clip… ${Math.max(0, Math.min(100, Math.round(Number(progress || 0) * 100)))}%`;
+        };
+        ffmpeg.on("progress", progressHandler);
+        try {
+            await ffmpeg.writeFile(inputName, await fetchFile(file));
+            const exitCode = await ffmpeg.exec([
+                "-ss", String(startSeconds), "-i", inputName, "-t", "60",
+                "-map", "0:v:0", "-map", "0:a?",
+                "-vf", "scale=1280:-2:force_original_aspect_ratio=decrease",
+                "-c:v", "libx264", "-preset", "ultrafast", "-crf", "30",
+                "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart",
+                outputName
+            ]);
+            if (exitCode !== 0) throw new Error("The selected clip could not be created from this video format.");
+            const data = await ffmpeg.readFile(outputName);
+            return new File([data.buffer], `${file.name.replace(/\.[^.]+$/, "")}-1-minute.mp4`, { type: "video/mp4", lastModified: Date.now() });
+        } finally {
+            ffmpeg.off("progress", progressHandler);
+            await ffmpeg.deleteFile(inputName).catch(() => {});
+            await ffmpeg.deleteFile(outputName).catch(() => {});
+            Swal.close();
+        }
+    }
+
+    async function prepareQueuedVideo(file) {
+        const duration = await videoDuration(file);
+        if (duration <= 60.5) return file;
+        const start = await chooseVideoClipStart(file, duration);
+        if (start === null) return null;
+        return trimVideoToMinute(file, start);
     }
 
     const mediaUploadQueues = new WeakMap();
@@ -1695,10 +1832,15 @@
         return "";
     }
 
-    function addFilesToMediaQueue(form, files) {
+    async function addFilesToMediaQueue(form, files) {
         const queue = queueFor(form);
         const kind = form.dataset.uploadKind || "";
-        Array.from(files || []).forEach(file => {
+        for (const originalFile of Array.from(files || [])) {
+            let file = originalFile;
+            if (kind === "video" && ["video/mp4", "video/webm", "video/quicktime"].includes(file.type) && file.size <= 200 * 1024 * 1024) {
+                file = await prepareQueuedVideo(file);
+                if (!file) continue;
+            }
             const queuedImages = queue.items.filter(item => item.kind === "image" && ["pending", "uploading", "processing"].includes(item.status)).length;
             const limitError = kind === "image" && uploadedImageCount() + queuedImages >= 20
                 ? "Maximum 20 images are allowed per listing."
@@ -1714,7 +1856,7 @@
                 status: validationError ? "failed" : "pending",
                 message: validationError || `${formatFileSize(file.size)} • Auto-uploading…`
             });
-        });
+        }
         refreshMediaQueue(form);
     }
 
@@ -2180,11 +2322,17 @@
         });
 
         form.querySelectorAll('input[type="file"]').forEach(input => {
-            input.addEventListener("change", () => {
+            input.addEventListener("change", async () => {
                 if (input.files && input.files.length > 0) {
-                    addFilesToMediaQueue(form, input.files);
+                    const selectedFiles = Array.from(input.files);
                     input.value = "";
-                    scheduleMediaQueueStart(form);
+                    try {
+                        await addFilesToMediaQueue(form, selectedFiles);
+                        scheduleMediaQueueStart(form);
+                    } catch (error) {
+                        window.Swal?.close();
+                        showNotice({ icon: "error", title: "Unable to prepare video", text: error.message || "Please try another video." });
+                    }
                 }
             });
         });
@@ -2239,12 +2387,17 @@
                 dropzone.classList.remove("is-dragover");
             });
         });
-        dropzone.addEventListener("drop", event => {
+        dropzone.addEventListener("drop", async event => {
             const input = dropzone.querySelector('input[type="file"]');
             const form = dropzone.closest("form");
             if (!input || !form || !event.dataTransfer?.files?.length) return;
-            addFilesToMediaQueue(form, event.dataTransfer.files);
-            scheduleMediaQueueStart(form);
+            try {
+                await addFilesToMediaQueue(form, event.dataTransfer.files);
+                scheduleMediaQueueStart(form);
+            } catch (error) {
+                window.Swal?.close();
+                showNotice({ icon: "error", title: "Unable to prepare video", text: error.message || "Please try another video." });
+            }
         });
     });
 
