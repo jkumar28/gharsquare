@@ -2149,7 +2149,15 @@ function propertyPublicMediaCardHtml(array $media): string
         : '';
 
     if ($kind === 'image') {
-        $preview = '<img src="' . e($fileUrl) . '" alt="Property image">';
+        $versionedUrl = $fileUrl;
+        if (str_starts_with($fileUrl, propertyUploadBaseUrl())) {
+            $relativePath = substr($fileUrl, strlen(propertyUploadBaseUrl()));
+            $absolutePath = propertyUploadBasePath() . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+            if (is_file($absolutePath)) {
+                $versionedUrl .= (str_contains($versionedUrl, '?') ? '&' : '?') . 'v=' . filemtime($absolutePath);
+            }
+        }
+        $preview = '<img src="' . e($versionedUrl) . '" alt="Property image">';
     } elseif ($kind === 'youtube') {
         $preview = '<iframe src="https://www.youtube.com/embed/' . e((string) ($media['youtube_id'] ?? '')) . '" title="YouTube property video" allowfullscreen loading="lazy"></iframe>';
     } else {
@@ -2175,10 +2183,68 @@ function propertyPublicMediaCardHtml(array $media): string
         '<div class="post-media-meta">' .
         '<div class="post-media-meta-main"><strong>' . e($kind === 'youtube' ? 'YouTube Video' : ucfirst($kind)) . '</strong>' . $typeControl . '</div>' .
         '<div class="post-media-card-actions">' . $coverControl .
+        ($kind === 'image' ?
+            '<button class="post-media-icon-btn" type="button" data-public-media-rotate-left="' . $mediaId . '" title="Rotate left and save" aria-label="Rotate photo left"><i class="bi bi-arrow-counterclockwise"></i></button>' .
+            '<button class="post-media-icon-btn" type="button" data-public-media-rotate-right="' . $mediaId . '" title="Rotate right and save" aria-label="Rotate photo right"><i class="bi bi-arrow-clockwise"></i></button>'
+            : '') .
         '<button class="post-media-icon-btn danger" type="button" data-public-media-delete="' . $mediaId . '" title="Remove media" aria-label="Remove media"><i class="bi bi-trash3"></i></button>' .
         '</div>' .
         '</div>' .
         '</article>';
+}
+
+function rotatePropertyMediaImage(int $draftId, int $mediaId, string $direction): void
+{
+    if (!in_array($direction, ['left', 'right'], true)) {
+        throw new RuntimeException('Invalid rotation direction.');
+    }
+
+    $stmt = db()->prepare("SELECT id, file_url FROM property_media WHERE id = :id AND draft_id = :draft_id AND type = 'image' LIMIT 1");
+    $stmt->execute([':id' => $mediaId, ':draft_id' => $draftId]);
+    $media = $stmt->fetch();
+    if (!$media) {
+        throw new RuntimeException('Photo not found.');
+    }
+
+    $fileUrl = (string) $media['file_url'];
+    if (!str_starts_with($fileUrl, propertyUploadBaseUrl())) {
+        throw new RuntimeException('Only uploaded photos can be rotated.');
+    }
+
+    $relativePath = ltrim(substr($fileUrl, strlen(propertyUploadBaseUrl())), '/');
+    $absolutePath = propertyUploadBasePath() . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+    $basePath = realpath(propertyUploadBasePath());
+    $resolvedPath = realpath($absolutePath);
+    if ($basePath === false || $resolvedPath === false || !str_starts_with($resolvedPath, $basePath . DIRECTORY_SEPARATOR) || !is_file($resolvedPath)) {
+        throw new RuntimeException('Photo file is unavailable.');
+    }
+
+    $source = imagecreatefromwebp($resolvedPath);
+    if (!$source) {
+        throw new RuntimeException('Unable to read the uploaded photo.');
+    }
+    $rotated = imagerotate($source, $direction === 'left' ? 90 : -90, imagecolorallocate($source, 255, 255, 255));
+    imagedestroy($source);
+    if (!$rotated) {
+        throw new RuntimeException('Unable to rotate the photo.');
+    }
+
+    $temporaryPath = $resolvedPath . '.rotate-' . bin2hex(random_bytes(4));
+    $saved = imagewebp($rotated, $temporaryPath, 82);
+    imagedestroy($rotated);
+    if (!$saved || !copy($temporaryPath, $resolvedPath)) {
+        if (is_file($temporaryPath)) {
+            unlink($temporaryPath);
+        }
+        throw new RuntimeException('Unable to save the rotated photo.');
+    }
+    unlink($temporaryPath);
+
+    clearstatcache(true, $resolvedPath);
+    if (tableHasColumn('property_media', 'file_size')) {
+        db()->prepare('UPDATE property_media SET file_size = :file_size WHERE id = :id AND draft_id = :draft_id')
+            ->execute([':file_size' => filesize($resolvedPath), ':id' => $mediaId, ':draft_id' => $draftId]);
+    }
 }
 
 function propertyPublicMediaGridHtml(array $mediaItems): string

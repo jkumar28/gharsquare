@@ -1653,8 +1653,6 @@
                     <div class="post-media-item-track"><span data-media-item-bar style="width:${item.progress}%"></span></div>
                 </div>
                 <div class="post-media-queue-actions">
-                    <button type="button" data-media-rotate="-90" title="Rotate left" aria-label="Rotate image left"${isImage ? "" : " hidden"}${locked ? " disabled" : ""}><i class="bi bi-arrow-counterclockwise"></i></button>
-                    <button type="button" data-media-rotate="90" title="Rotate right" aria-label="Rotate image right"${isImage ? "" : " hidden"}${locked ? " disabled" : ""}><i class="bi bi-arrow-clockwise"></i></button>
                     <button type="button" data-media-retry title="Retry upload" aria-label="Retry upload"${item.status === "failed" ? "" : " hidden"}><i class="bi bi-arrow-repeat"></i></button>
                     <button class="danger" type="button" data-media-queue-remove title="Remove from queue" aria-label="Remove from queue"${locked ? " disabled" : ""}><i class="bi bi-x-lg"></i></button>
                 </div>
@@ -1714,13 +1712,13 @@
                 rotation: 0,
                 progress: validationError ? 100 : 0,
                 status: validationError ? "failed" : "pending",
-                message: validationError || `${formatFileSize(file.size)} • ${kind === "image" ? "Rotate if needed • auto-uploading shortly" : "Auto-uploading shortly"}`
+                message: validationError || `${formatFileSize(file.size)} • Auto-uploading…`
             });
         });
         refreshMediaQueue(form);
     }
 
-    function scheduleMediaQueueStart(form, delay = 5000) {
+    function scheduleMediaQueueStart(form, delay = 100) {
         const queue = queueFor(form);
         if (queue.autoStartTimer) window.clearTimeout(queue.autoStartTimer);
         queue.autoStartTimer = window.setTimeout(() => {
@@ -1971,7 +1969,8 @@
         if (action === "set_photo_type") {
             data.set("title", title);
         }
-        setStatus(action === "set_cover" ? "Updating cover..." : "Updating photo type...", "saving");
+        const isRotation = action === "rotate_left" || action === "rotate_right";
+        setStatus(action === "set_cover" ? "Updating cover..." : (isRotation ? "Rotating and saving photo..." : "Updating photo type..."), "saving");
 
         return fetch(config.media_url || "post-property-media", {
             method: "POST",
@@ -2254,6 +2253,8 @@
         const useButton = event.target.closest("[data-description-template-use]");
         const deleteButton = event.target.closest("[data-public-media-delete]");
         const coverButton = event.target.closest("[data-public-media-cover]");
+        const rotateLeftButton = event.target.closest("[data-public-media-rotate-left]");
+        const rotateRightButton = event.target.closest("[data-public-media-rotate-right]");
         const groupButton = event.target.closest("[data-property-group]");
         const subtypeButton = event.target.closest("[data-property-subtype]");
 
@@ -2303,6 +2304,21 @@
         if (coverButton) {
             event.preventDefault();
             updateMediaMetadata(coverButton.dataset.publicMediaCover || "", "set_cover");
+        }
+
+        if (rotateLeftButton) {
+            event.preventDefault();
+            rotateLeftButton.disabled = true;
+            updateMediaMetadata(rotateLeftButton.dataset.publicMediaRotateLeft || "", "rotate_left").finally(() => {
+                rotateLeftButton.disabled = false;
+            });
+        }
+        if (rotateRightButton) {
+            event.preventDefault();
+            rotateRightButton.disabled = true;
+            updateMediaMetadata(rotateRightButton.dataset.publicMediaRotateRight || "", "rotate_right").finally(() => {
+                rotateRightButton.disabled = false;
+            });
         }
     });
 

@@ -105,6 +105,19 @@ try {
         postPropertyMediaResponse(publicMediaPayload($draftId, 'Photo type updated.'));
     }
 
+    if ($action === 'rotate_left' || $action === 'rotate_right') {
+        $mediaId = (int) ($_POST['media_id'] ?? 0);
+        $direction = $action === 'rotate_left' ? 'left' : 'right';
+        rotatePropertyMediaImage($draftId, $mediaId, $direction);
+        recordUserActivity('property_media_rotate', [
+            'entity_type' => 'property_draft',
+            'entity_id' => (string) $draftId,
+            'metadata' => ['media_id' => $mediaId, 'direction' => $direction],
+        ]);
+
+        postPropertyMediaResponse(publicMediaPayload($draftId, 'Photo rotated and saved.'));
+    }
+
     $currentMedia = propertyDraftMedia($draftId);
     $currentImageCount = propertyImageCount($currentMedia);
     $uploadKind = trim((string) ($_POST['upload_kind'] ?? ''));
