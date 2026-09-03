@@ -1585,6 +1585,38 @@
         return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, "0")}`;
     }
 
+    async function renderVideoTimeline(previewUrl, container, duration) {
+        const sampler = document.createElement("video");
+        sampler.src = previewUrl;
+        sampler.muted = true;
+        sampler.preload = "auto";
+        await new Promise((resolve, reject) => {
+            sampler.onloadedmetadata = resolve;
+            sampler.onerror = () => reject(new Error("Unable to build video preview."));
+        });
+        const canvas = document.createElement("canvas");
+        canvas.width = 96;
+        canvas.height = 72;
+        const context = canvas.getContext("2d");
+        const frameCount = window.innerWidth < 600 ? 7 : 11;
+        for (let index = 0; index < frameCount; index++) {
+            sampler.currentTime = Math.max(0.01, Math.min(duration - 0.05, (duration * index) / Math.max(1, frameCount - 1)));
+            await new Promise(resolve => sampler.addEventListener("seeked", resolve, { once: true }));
+            const sourceWidth = sampler.videoWidth || 1;
+            const sourceHeight = sampler.videoHeight || 1;
+            const scale = Math.max(canvas.width / sourceWidth, canvas.height / sourceHeight);
+            const width = sourceWidth * scale;
+            const height = sourceHeight * scale;
+            context.drawImage(sampler, (canvas.width - width) / 2, (canvas.height - height) / 2, width, height);
+            const image = document.createElement("img");
+            image.src = canvas.toDataURL("image/jpeg", 0.65);
+            image.alt = "";
+            container.appendChild(image);
+        }
+        sampler.removeAttribute("src");
+        sampler.load();
+    }
+
     function loadBrowserVideoTrimmer() {
         if (videoTrimmerLoader) return videoTrimmerLoader;
         const loadScript = (url, globalName) => new Promise((resolve, reject) => {
@@ -1623,32 +1655,39 @@
         const maximumTime = Math.max(1, Math.floor(duration));
         const initialEnd = Math.min(60, maximumTime);
         const result = await Swal.fire({
-            title: "Trim video for your property",
+            title: "",
             html: `<div class="post-video-trimmer">
-                <video src="${escapeHtml(previewUrl)}" controls preload="metadata"></video>
-                <div class="post-video-trimmer-times">
-                    <label>Start <strong data-clip-start-label>0:00</strong></label>
-                    <label>End <strong data-clip-end-label>${formatClipTime(initialEnd)}</strong></label>
+                <div class="post-video-trimmer-top"><button type="button" data-clip-cancel aria-label="Cancel video"><i class="bi bi-arrow-left"></i></button><strong>Trim video</strong></div>
+                <video src="${escapeHtml(previewUrl)}" controls playsinline preload="metadata"></video>
+                <div class="post-video-timeline">
+                    <div class="post-video-timeline-frames" data-clip-frames><span>Generating preview…</span></div>
+                    <div class="post-video-timeline-selection" data-clip-selection>
+                        <i class="start"></i><i class="end"></i><strong data-clip-duration>${formatClipTime(initialEnd)}</strong>
+                    </div>
+                    <input type="range" min="0" max="${maximumTime}" step="0.1" value="0" data-clip-start aria-label="Clip start time">
+                    <input type="range" min="0.1" max="${maximumTime}" step="0.1" value="${initialEnd}" data-clip-end aria-label="Clip end time">
                 </div>
-                <div class="post-video-trimmer-range">
-                    <input type="range" min="0" max="${maximumTime}" step="1" value="0" data-clip-start aria-label="Clip start time">
-                    <input type="range" min="1" max="${maximumTime}" step="1" value="${initialEnd}" data-clip-end aria-label="Clip end time">
-                </div>
-                <div><span>0:00</span><strong data-clip-duration>${formatClipTime(initialEnd)} selected</strong><span>${formatClipTime(maximumTime)}</span></div>
-                <small>Select any section up to 60 seconds. Drag Start or End to adjust the clip.</small>
+                <div class="post-video-trimmer-meta"><span>Choose a part of the video</span><span><b data-clip-start-label>0:00</b> – <b data-clip-end-label>${formatClipTime(initialEnd)}</b></span></div>
             </div>`,
-            showCancelButton: true,
-            confirmButtonText: "Use selected clip",
-            cancelButtonText: "Cancel video",
-            confirmButtonColor: "#0f766e",
-            width: 680,
+            showCancelButton: false,
+            confirmButtonText: "Next",
+            buttonsStyling: false,
+            width: 760,
+            padding: 0,
+            background: "#050505",
+            customClass: { popup: "post-video-trimmer-popup", confirmButton: "post-video-trimmer-next", actions: "post-video-trimmer-actions" },
             didOpen: popup => {
                 const range = popup.querySelector("[data-clip-start]");
                 const endRange = popup.querySelector("[data-clip-end]");
                 const label = popup.querySelector("[data-clip-start-label]");
                 const endLabel = popup.querySelector("[data-clip-end-label]");
                 const durationLabel = popup.querySelector("[data-clip-duration]");
+                const selection = popup.querySelector("[data-clip-selection]");
                 const preview = popup.querySelector("video");
+                popup.querySelector("[data-clip-cancel]").addEventListener("click", () => Swal.close());
+                const frames = popup.querySelector("[data-clip-frames]");
+                frames.innerHTML = "";
+                renderVideoTimeline(previewUrl, frames, duration).catch(() => { frames.innerHTML = "<span>Preview unavailable</span>"; });
                 const syncTrimRange = changed => {
                     let start = Number(range.value || 0);
                     let end = Number(endRange.value || 1);
@@ -1663,7 +1702,9 @@
                     endRange.value = String(end);
                     label.textContent = formatClipTime(start);
                     endLabel.textContent = formatClipTime(end);
-                    durationLabel.textContent = `${formatClipTime(end - start)} selected`;
+                    durationLabel.textContent = formatClipTime(end - start);
+                    selection.style.left = `${(start / maximumTime) * 100}%`;
+                    selection.style.right = `${100 - (end / maximumTime) * 100}%`;
                     preview.dataset.clipStart = String(start);
                     preview.dataset.clipEnd = String(end);
                     preview.currentTime = changed === "end" ? Math.max(start, end - 1) : start;
@@ -1672,6 +1713,8 @@
                 endRange.addEventListener("input", () => syncTrimRange("end"));
                 preview.dataset.clipStart = "0";
                 preview.dataset.clipEnd = String(initialEnd);
+                selection.style.left = "0%";
+                selection.style.right = `${100 - (initialEnd / maximumTime) * 100}%`;
                 preview.addEventListener("play", () => {
                     const start = Number(preview.dataset.clipStart || 0);
                     const end = Number(preview.dataset.clipEnd || initialEnd);
