@@ -29,6 +29,7 @@
     let videoTrimmerLoader = null;
 
     const videoUploadForm = document.querySelector('.post-media-upload-form[data-upload-kind="video"]');
+    videoUploadForm?.querySelector('input[type="file"]')?.removeAttribute("multiple");
     const videoUploadHint = videoUploadForm?.querySelector(".post-media-dropzone small");
     if (videoUploadHint) videoUploadHint.textContent = "Large videos accepted. Select 15–60 seconds; automatic compression is applied before upload.";
     document.querySelectorAll(".post-media-stats > div").forEach(stat => {
@@ -2097,7 +2098,16 @@
     async function addFilesToMediaQueue(form, files) {
         const queue = queueFor(form);
         const kind = form.dataset.uploadKind || "";
-        for (const originalFile of Array.from(files || [])) {
+        let incomingFiles = Array.from(files || []);
+        if (kind === "video") {
+            const existingVideo = Boolean(mediaGrid?.querySelector("video, iframe"));
+            const queuedVideo = queue.items.some(item => item.kind === "video" && ["pending", "uploading", "processing"].includes(item.status));
+            if (existingVideo || queuedVideo) {
+                throw new Error("Only one video is allowed per property. Remove the existing video before uploading another.");
+            }
+            incomingFiles = incomingFiles.slice(0, 1);
+        }
+        for (const originalFile of incomingFiles) {
             let file = originalFile;
             if (kind === "video" && ["video/mp4", "video/webm", "video/quicktime"].includes(file.type)) {
                 file = await prepareQueuedVideo(file);

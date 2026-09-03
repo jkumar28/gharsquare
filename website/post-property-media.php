@@ -125,6 +125,9 @@ try {
     $normalizedYoutubeUrl = null;
 
     if ($uploadKind === 'youtube') {
+        if (propertyVideoPresence($currentMedia)) {
+            postPropertyMediaResponse(['success' => false, 'message' => 'Only one video is allowed per property. Remove the existing video first.'], 422);
+        }
         $normalizedYoutubeUrl = normalizeYoutubeUrl($youtubeUrl);
 
         if ($normalizedYoutubeUrl === null) {
@@ -190,6 +193,9 @@ try {
             $currentImageCount++;
             $uploadedKinds[] = 'image';
         } else {
+            if (propertyVideoPresence($currentMedia) || in_array('video', $uploadedKinds, true)) {
+                postPropertyMediaResponse(['success' => false, 'message' => 'Only one video is allowed per property. Remove the existing video first.'], 422);
+            }
             $url = storeVideoUpload($file, $draftId, (string) $inspection['extension']);
             addPropertyMediaRecord($draftId, $url, 'video', 0, [
                 'source_type' => 'upload',
