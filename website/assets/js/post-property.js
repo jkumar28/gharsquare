@@ -1653,7 +1653,9 @@
         if (!window.Swal) throw new Error("Video clip selector is unavailable. Please refresh and try again.");
         const previewUrl = URL.createObjectURL(file);
         const maximumTime = Math.max(1, Math.floor(duration));
-        const initialEnd = Math.min(60, maximumTime);
+        const minimumClipSeconds = 15;
+        const maximumClipSeconds = 60;
+        const initialEnd = Math.min(maximumClipSeconds, maximumTime);
         const result = await Swal.fire({
             title: "",
             html: `<div class="post-video-trimmer">
@@ -1665,9 +1667,12 @@
                         <i class="start"></i><i class="end"></i><strong data-clip-duration>${formatClipTime(initialEnd)}</strong>
                     </div>
                     <input type="range" min="0" max="${maximumTime}" step="0.1" value="0" data-clip-start aria-label="Clip start time">
-                    <input type="range" min="0.1" max="${maximumTime}" step="0.1" value="${initialEnd}" data-clip-end aria-label="Clip end time">
+                    <input type="range" min="${minimumClipSeconds}" max="${maximumTime}" step="0.1" value="${initialEnd}" data-clip-end aria-label="Clip end time">
                 </div>
-                <div class="post-video-trimmer-meta"><span>Choose a part of the video</span><span><b data-clip-start-label>0:00</b> – <b data-clip-end-label>${formatClipTime(initialEnd)}</b></span></div>
+                <div class="post-video-trimmer-meta">
+                    <span>Choose a part of the video <em>15–60 sec</em></span>
+                    <span class="post-video-trimmer-time"><b data-clip-start-label>0:00</b> – <b data-clip-end-label>${formatClipTime(initialEnd)}</b></span>
+                </div>
             </div>`,
             showCancelButton: false,
             confirmButtonText: "Next",
@@ -1690,14 +1695,22 @@
                 renderVideoTimeline(previewUrl, frames, duration).catch(() => { frames.innerHTML = "<span>Preview unavailable</span>"; });
                 const syncTrimRange = changed => {
                     let start = Number(range.value || 0);
-                    let end = Number(endRange.value || 1);
+                    let end = Number(endRange.value || minimumClipSeconds);
                     if (changed === "start") {
-                        if (start >= end) end = Math.min(maximumTime, start + 1);
-                        if (end - start > 60) end = start + 60;
+                        if (end - start < minimumClipSeconds) {
+                            if (start + minimumClipSeconds <= maximumTime) end = start + minimumClipSeconds;
+                            else start = Math.max(0, end - minimumClipSeconds);
+                        }
+                        if (end - start > maximumClipSeconds) end = start + maximumClipSeconds;
                     } else {
-                        if (end <= start) start = Math.max(0, end - 1);
-                        if (end - start > 60) start = end - 60;
+                        if (end - start < minimumClipSeconds) {
+                            if (end - minimumClipSeconds >= 0) start = end - minimumClipSeconds;
+                            else end = Math.min(maximumTime, start + minimumClipSeconds);
+                        }
+                        if (end - start > maximumClipSeconds) start = end - maximumClipSeconds;
                     }
+                    start = Math.max(0, Math.min(start, maximumTime - minimumClipSeconds));
+                    end = Math.min(maximumTime, Math.max(end, start + minimumClipSeconds));
                     range.value = String(start);
                     endRange.value = String(end);
                     label.textContent = formatClipTime(start);
@@ -1708,6 +1721,11 @@
                     preview.dataset.clipStart = String(start);
                     preview.dataset.clipEnd = String(end);
                     preview.currentTime = changed === "end" ? Math.max(start, end - 1) : start;
+                    const validation = popup.querySelector(".swal2-validation-message");
+                    if (validation && end - start >= minimumClipSeconds && end - start <= maximumClipSeconds) {
+                        validation.textContent = "";
+                        validation.style.display = "none";
+                    }
                 };
                 range.addEventListener("input", () => syncTrimRange("start"));
                 endRange.addEventListener("input", () => syncTrimRange("end"));
@@ -1733,8 +1751,8 @@
                 const popup = document.querySelector(".swal2-popup");
                 const start = Number(popup?.querySelector("[data-clip-start]")?.value || 0);
                 const end = Number(popup?.querySelector("[data-clip-end]")?.value || 0);
-                if (end <= start || end - start > 60) {
-                    Swal.showValidationMessage("Select a clip between 1 and 60 seconds.");
+                if (end - start < minimumClipSeconds || end - start > maximumClipSeconds) {
+                    Swal.showValidationMessage("Select a clip between 15 and 60 seconds.");
                     return false;
                 }
                 return { start, duration: end - start };
