@@ -23,6 +23,17 @@
         });
     }
 
+    if (window.Swiper && document.querySelector(".mobilePromoSwiper")) {
+        new Swiper(".mobilePromoSwiper", {
+            slidesPerView: 1,
+            spaceBetween: 12,
+            loop: true,
+            speed: 550,
+            autoplay: { delay: 3800, disableOnInteraction: false },
+            pagination: { el: ".mobile-promo-pagination", clickable: true }
+        });
+    }
+
     if (window.Swiper && document.querySelector(".propertySwiper")) {
         new Swiper(".propertySwiper", {
             slidesPerView: 1.15,

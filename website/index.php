@@ -27,6 +27,23 @@ websiteHeader(
         <div class="container">
             <div class="row align-items-center min-vh-60">
                 <div class="col-lg-8 hero-content">
+                    <div class="swiper mobilePromoSwiper" aria-label="GharSquare highlights">
+                        <div class="swiper-wrapper">
+                            <a class="swiper-slide mobile-promo-card promo-owner" href="<?= e(siteWebsiteUrl('post-property')) ?>">
+                                <span class="mobile-promo-copy"><small>FOR PROPERTY OWNERS</small><strong>Post your property free</strong><em>Reach genuine buyers & tenants</em></span>
+                                <span class="mobile-promo-art"><i class="bi bi-house-add"></i></span>
+                            </a>
+                            <a class="swiper-slide mobile-promo-card promo-rent" href="<?= e(siteListingUrl(['type' => 'rent', 'city' => $selectedCity])) ?>">
+                                <span class="mobile-promo-copy"><small>READY TO MOVE?</small><strong>Find a home for rent</strong><em>Explore active listings near you</em></span>
+                                <span class="mobile-promo-art"><i class="bi bi-key"></i></span>
+                            </a>
+                            <a class="swiper-slide mobile-promo-card promo-verified" href="<?= e(siteListingUrl(['type' => 'buy', 'city' => $selectedCity])) ?>">
+                                <span class="mobile-promo-copy"><small>SEARCH WITH CONFIDENCE</small><strong>Discover live properties</strong><em>Fresh listings across every category</em></span>
+                                <span class="mobile-promo-art"><i class="bi bi-patch-check"></i></span>
+                            </a>
+                        </div>
+                        <div class="swiper-pagination mobile-promo-pagination"></div>
+                    </div>
                     <h1>Find live properties<?= $selectedCity !== '' ? ' in ' . e($selectedCity) : '' ?></h1>
                     <p>Homes, rentals, commercial spaces, PG rooms and land from active listings.</p>
 
