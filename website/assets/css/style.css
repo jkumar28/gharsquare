@@ -2752,6 +2752,7 @@ footer a {
 .post-video-timeline {
     position: relative;
     height: 78px;
+    overflow: hidden;
     border-radius: 12px;
 }
 

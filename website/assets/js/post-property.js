@@ -1784,16 +1784,21 @@
         try {
             await ffmpeg.writeFile(inputName, await fetchFile(file));
             const exitCode = await ffmpeg.exec([
-                "-ss", String(startSeconds), "-i", inputName, "-t", String(clipDuration),
+                "-i", inputName, "-ss", String(startSeconds), "-t", String(clipDuration),
                 "-map", "0:v:0", "-map", "0:a?",
                 "-vf", "scale=1280:-2:force_original_aspect_ratio=decrease",
                 "-c:v", "libx264", "-preset", "ultrafast", "-crf", "30",
+                "-maxrate", "1800k", "-bufsize", "3600k",
                 "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart",
                 outputName
             ]);
             if (exitCode !== 0) throw new Error("The selected clip could not be created from this video format.");
             const data = await ffmpeg.readFile(outputName);
-            return new File([data.buffer], `${file.name.replace(/\.[^.]+$/, "")}-clip.mp4`, { type: "video/mp4", lastModified: Date.now() });
+            const trimmedFile = new File([data], `${file.name.replace(/\.[^.]+$/, "")}-clip.mp4`, { type: "video/mp4", lastModified: Date.now() });
+            if (trimmedFile.size > 20 * 1024 * 1024) {
+                throw new Error("The prepared clip is still larger than 20 MB. Select a shorter section and try again.");
+            }
+            return trimmedFile;
         } finally {
             ffmpeg.off("progress", progressHandler);
             await ffmpeg.deleteFile(inputName).catch(() => {});
