@@ -25,10 +25,11 @@
 
     if (window.Swiper && document.querySelector(".propertySwiper")) {
         new Swiper(".propertySwiper", {
-            slidesPerView: 2,
+            slidesPerView: 1.15,
             spaceBetween: 12,
             pagination: { el: ".swiper-pagination", clickable: true },
             breakpoints: {
+                480: { slidesPerView: 1.5 },
                 576: { slidesPerView: 2 },
                 900: { slidesPerView: 3 },
                 1200: { slidesPerView: 4 }

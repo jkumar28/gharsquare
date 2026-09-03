@@ -108,6 +108,11 @@ function websiteHeader(string $title, string $description, string $bodyClass = '
             <span class="navbar-toggler-icon"></span>
         </button>
 
+        <div class="mobile-header-actions" aria-label="Account shortcuts">
+            <a href="<?= e(siteWebsiteUrl('account?view=saved')) ?>" aria-label="Saved properties"><i class="bi bi-heart"></i></a>
+            <a href="<?= e(siteWebsiteUrl('account')) ?>" aria-label="My account"><i class="bi bi-person"></i></a>
+        </div>
+
         <div class="collapse navbar-collapse" id="mainNav">
             <ul class="navbar-nav mx-auto gap-lg-4">
                 <li><a class="nav-link" href="<?= e(siteListingUrl(['type' => 'buy', 'city' => $selectedCity])) ?>">Buyers</a></li>
@@ -130,6 +135,16 @@ function websiteHeader(string $title, string $description, string $bodyClass = '
 
 function websiteFooter(array $options = []): void
 {
+    $requestPath = trim((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/');
+    $pageName = basename($requestPath);
+    $accountView = trim((string) ($_GET['view'] ?? ''));
+    $bottomActive = match (true) {
+        $pageName === 'listing', str_contains($requestPath, 'properties-for-'), str_contains($requestPath, 'commercial-properties'), str_contains($requestPath, 'plots-for-sale'), str_contains($requestPath, 'pg-accommodation') => 'search',
+        $pageName === 'post-property' => 'post',
+        $pageName === 'account' && $accountView === 'saved' => 'saved',
+        in_array($pageName, ['account', 'login', 'verify-otp'], true) => 'account',
+        default => 'home',
+    };
     ?>
 <footer id="footer">
     <div class="container">
@@ -153,6 +168,13 @@ function websiteFooter(array $options = []): void
         </div>
     </div>
 </footer>
+<nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+    <a class="<?= $bottomActive === 'home' ? 'active' : '' ?>" href="<?= e(siteWebsiteUrl()) ?>"><i class="bi bi-house-door"></i><span>Home</span></a>
+    <a class="<?= $bottomActive === 'search' ? 'active' : '' ?>" href="<?= e(siteListingUrl()) ?>"><i class="bi bi-search"></i><span>Search</span></a>
+    <a class="mobile-bottom-post <?= $bottomActive === 'post' ? 'active' : '' ?>" href="<?= e(siteWebsiteUrl('post-property')) ?>"><i class="bi bi-plus-lg"></i><span>Post</span></a>
+    <a class="<?= $bottomActive === 'saved' ? 'active' : '' ?>" href="<?= e(siteWebsiteUrl('account?view=saved')) ?>"><i class="bi bi-heart"></i><span>Saved</span></a>
+    <a class="<?= $bottomActive === 'account' ? 'active' : '' ?>" href="<?= e(siteWebsiteUrl('account')) ?>"><i class="bi bi-person"></i><span>Account</span></a>
+</nav>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <?php if (!empty($options['swiper'])): ?>
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>

@@ -90,6 +90,29 @@ websiteHeader(
         </div>
     </section>
 
+    <section class="mobile-home-categories" aria-label="Explore property categories">
+        <div class="container">
+            <div class="mobile-section-title"><h2>What are you looking for?</h2></div>
+            <div class="mobile-category-strip">
+                <?php
+                $mobileCategories = [
+                    ['type' => 'buy', 'icon' => 'bi-buildings', 'label' => 'Buy'],
+                    ['type' => 'rent', 'icon' => 'bi-key', 'label' => 'Rent'],
+                    ['type' => 'commercial', 'icon' => 'bi-shop', 'label' => 'Commercial'],
+                    ['type' => 'pg', 'icon' => 'bi-people', 'label' => 'PG'],
+                    ['type' => 'plots', 'icon' => 'bi-map', 'label' => 'Plots'],
+                ];
+                ?>
+                <?php foreach ($mobileCategories as $category): ?>
+                    <a href="<?= e(siteListingUrl(['type' => $category['type'], 'city' => $selectedCity])) ?>">
+                        <span><i class="bi <?= e($category['icon']) ?>"></i></span>
+                        <strong><?= e($category['label']) ?></strong>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
+
     <section class="pt-3 pb-5 content-section home-latest-section" id="properties">
         <div class="container">
             <div class="section-heading">
