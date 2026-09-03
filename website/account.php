@@ -157,6 +157,10 @@ $nav = [
             <button class="navbar-toggler bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            <div class="mobile-header-actions" aria-label="Account shortcuts">
+                <a href="<?= e(siteWebsiteUrl()) ?>" aria-label="Home"><i class="bi bi-house-door"></i></a>
+                <a href="logout" aria-label="Logout"><i class="bi bi-box-arrow-right"></i></a>
+            </div>
             <div class="collapse navbar-collapse" id="mainNav">
                 <ul class="navbar-nav mx-auto gap-lg-4">
                     <li><a class="nav-link" href="./">Home</a></li>
@@ -477,6 +481,14 @@ $nav = [
             </section>
         </section>
     </main>
+
+    <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+        <a href="<?= e(siteWebsiteUrl()) ?>"><i class="bi bi-house-door"></i><span>Home</span></a>
+        <a href="<?= e(siteListingUrl()) ?>"><i class="bi bi-search"></i><span>Search</span></a>
+        <a class="mobile-bottom-post" href="post-property"><i class="bi bi-plus-lg"></i><span>Post</span></a>
+        <a class="<?= $view === 'saved' ? 'active' : '' ?>" href="account?view=saved"><i class="bi bi-heart"></i><span>Saved</span></a>
+        <a class="<?= $view !== 'saved' ? 'active' : '' ?>" href="account"><i class="bi bi-person"></i><span>Account</span></a>
+    </nav>
 
     <script src="<?= e(APP_URL) ?>/website/assets/js/auth-ui.js?v=<?= e((string) filemtime(__DIR__ . '/assets/js/auth-ui.js')) ?>"></script>
     <script src="<?= e(APP_URL) ?>/website/assets/js/account.js?v=<?= e((string) filemtime(__DIR__ . '/assets/js/account.js')) ?>"></script>
