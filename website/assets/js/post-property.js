@@ -1714,13 +1714,13 @@
                 rotation: 0,
                 progress: validationError ? 100 : 0,
                 status: validationError ? "failed" : "pending",
-                message: validationError || `${formatFileSize(file.size)} • ${kind === "image" ? "Orientation will be checked • ready" : "Ready to upload"}`
+                message: validationError || `${formatFileSize(file.size)} • ${kind === "image" ? "Rotate if needed • auto-uploading shortly" : "Auto-uploading shortly"}`
             });
         });
         refreshMediaQueue(form);
     }
 
-    function scheduleMediaQueueStart(form, delay = 900) {
+    function scheduleMediaQueueStart(form, delay = 5000) {
         const queue = queueFor(form);
         if (queue.autoStartTimer) window.clearTimeout(queue.autoStartTimer);
         queue.autoStartTimer = window.setTimeout(() => {
@@ -2206,7 +2206,7 @@
                     item.rotation = (item.rotation + Number(rotateButton.dataset.mediaRotate || 0) + 360) % 360;
                     item.status = "pending";
                     item.progress = 0;
-                    item.message = `${formatFileSize(item.file.size)} • Rotation ${item.rotation || 0}° • ready`;
+                    item.message = `${formatFileSize(item.file.size)} • Rotation ${item.rotation || 0}° • auto-uploading shortly`;
                     updateMediaQueueItem(form, item);
                     refreshMediaQueue(form);
                     scheduleMediaQueueStart(form);
